@@ -1,0 +1,117 @@
+"""Client-side Output Policy Scanner for Python SDK."""
+
+import logging
+import re
+from dataclasses import dataclass, field
+from typing import Any
+
+logger = logging.getLogger("agentwatch.output_policy")
+
+DEFAULT_BANKING_RULES = [
+    {
+        "id": "bnk_01",
+        "name": "banking_interest_rate_disclaimer",
+        "pattern_type": "disclaimer_required",
+        "trigger_pattern": r"\b\d+(?:\.\d+)?%\s*(?:APR|interest|p\.a\.|annual|per annum)\b",
+        "required_disclaimer": r"(subject to (terms|status|approval)|indicative only|terms and conditions apply|variable rate|rates may vary)",
+        "action": "block",
+        "message": "Regulatory violation: Interest rate quotes must include an explicit disclaimer (e.g. 'subject to terms and conditions').",
+    },
+    {
+        "id": "bnk_02",
+        "name": "banking_no_definitive_investment_advice",
+        "pattern_type": "regex",
+        "pattern": r"\b(guaranteed\s+returns?|you\s+(must|should definitely)\s+(buy|invest in|short|sell)\b|risk-free\s+profit|100%\s+safe\s+investment)\b",
+        "action": "block",
+        "message": "Regulatory violation: AI agents are strictly prohibited from giving definitive investment advice or guaranteed return claims.",
+    },
+]
+
+DEFAULT_HEALTHCARE_RULES = [
+    {
+        "id": "med_01",
+        "name": "healthcare_no_definitive_diagnosis",
+        "pattern_type": "regex",
+        "pattern": r"\b(you\s+(definitely\s+have|are\s+diagnosed\s+with)|this\s+is\s+a\s+confirmed\s+case\s+of|you\s+suffer\s+from\s+[a-z\s]+disease)\b",
+        "action": "block",
+        "message": "Medical compliance violation: AI cannot provide definitive medical diagnoses.",
+    },
+    {
+        "id": "med_02",
+        "name": "healthcare_symptom_disclaimer_required",
+        "pattern_type": "disclaimer_required",
+        "trigger_pattern": r"\b(symptoms?|pain|fever|infection|treatment|dosage|medication|swelling|headache|rash)\b",
+        "required_disclaimer": r"(consult\s+(a\s+)?(doctor|physician|healthcare\s+professional|medical\s+expert)|seek\s+medical\s+advice)",
+        "action": "flag",
+        "message": "Medical compliance advisory: Symptom-related responses must include a doctor consultation disclaimer.",
+    },
+]
+
+
+@dataclass
+class OutputViolation:
+    rule_id: str
+    rule_name: str
+    action: str  # "block" | "flag"
+    matched_text: str
+    message: str
+
+
+@dataclass
+class OutputScanResult:
+    is_blocked: bool
+    violations: list[OutputViolation] = field(default_factory=list)
+
+
+def scan_output_policy(text: Any, rules: list[dict[str, Any]] | None = None) -> OutputScanResult:
+    """Evaluate text output against regulatory output policies."""
+    if not isinstance(text, str):
+        if isinstance(text, dict):
+            # Extract content text if it's a message payload
+            text = text.get("content") or text.get("text") or str(text)
+        else:
+            text = str(text) if text is not None else ""
+
+    if not text:
+        return OutputScanResult(is_blocked=False, violations=[])
+
+    active_rules = rules if rules is not None else (DEFAULT_BANKING_RULES + DEFAULT_HEALTHCARE_RULES)
+    violations: list[OutputViolation] = []
+    is_blocked = False
+
+    for r in active_rules:
+        rule_id = r.get("id", "rule_custom")
+        rule_name = r.get("name", "unnamed_rule")
+        pattern_type = r.get("pattern_type", "regex")
+        action = r.get("action", "flag")
+        message = r.get("message", "Output violated compliance policy.")
+
+        if pattern_type == "regex":
+            pat = r.get("pattern", "")
+            if pat:
+                m = re.search(pat, text, re.IGNORECASE)
+                if m:
+                    violations.append(OutputViolation(rule_id=rule_id, rule_name=rule_name, action=action, matched_text=m.group(0), message=message))
+                    if action == "block":
+                        is_blocked = True
+
+        elif pattern_type == "keyword":
+            kw = r.get("pattern", "")
+            if kw and kw.lower() in text.lower():
+                violations.append(OutputViolation(rule_id=rule_id, rule_name=rule_name, action=action, matched_text=kw, message=message))
+                if action == "block":
+                    is_blocked = True
+
+        elif pattern_type == "disclaimer_required":
+            trigger_pat = r.get("trigger_pattern", "")
+            disclaimer_pat = r.get("required_disclaimer", "")
+            if trigger_pat and disclaimer_pat:
+                m = re.search(trigger_pat, text, re.IGNORECASE)
+                if m:
+                    has_disclaimer = re.search(disclaimer_pat, text, re.IGNORECASE) is not None
+                    if not has_disclaimer:
+                        violations.append(OutputViolation(rule_id=rule_id, rule_name=rule_name, action=action, matched_text=m.group(0), message=message))
+                        if action == "block":
+                            is_blocked = True
+
+    return OutputScanResult(is_blocked=is_blocked, violations=violations)

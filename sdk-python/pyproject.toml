@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentwatch-sdk"
+version = "0.1.0"
+description = "Python SDK for AgentWatch span ingestion"
+requires-python = ">=3.10"
+dependencies = ["httpx>=0.27"]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "respx>=0.21"]
+
+[project.scripts]
+agentwatch = "agentwatch.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentwatch"]
