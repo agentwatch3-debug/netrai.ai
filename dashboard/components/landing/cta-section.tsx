@@ -29,7 +29,7 @@ export function CTASection() {
             </Link>
 
             <a
-              href="https://github.com/agentwatch/agentwatch"
+              href="https://github.com/agentwatch3-debug/agentwatch"
               target="_blank"
               rel="noreferrer"
               className="h-11 px-6 border border-slate-800 bg-slate-900/60 hover:bg-slate-800/80 text-slate-200 font-semibold rounded-xl text-sm flex items-center gap-2 font-mono backdrop-blur-md"

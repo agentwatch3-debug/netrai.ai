@@ -46,7 +46,7 @@ export function LandingNavbar() {
         {/* Right Auth & CTAs */}
         <div className="flex items-center gap-2.5">
           <a
-            href="https://github.com/agentwatch/agentwatch"
+            href="https://github.com/agentwatch3-debug/agentwatch"
             target="_blank"
             rel="noreferrer"
             className="hidden sm:flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-300 hover:border-slate-700 hover:text-white transition-colors font-mono"
