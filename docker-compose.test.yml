@@ -1,0 +1,48 @@
+include:
+  - infra/docker-compose.yml
+
+services:
+  ingestion-api:
+    build:
+      context: ./ingestion-api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    environment:
+      ENVIRONMENT: local
+      AUTH_DISABLED: "false"
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql://agentwatch:agentwatch@postgres:5432/agentwatch
+      SPAN_BACKEND: redis
+      RATE_LIMIT_PER_MINUTE: 600
+      PII_FERNET_KEYS: "${PII_FERNET_KEYS:-olJNPob2Kd2LdHE8qlkElHijZ0QkI6xWfRS2mvZkvv0=,IYGRpbFEosZJoL7-KMuEaiTdSLsFuuN7EHyAXqleRyU=}"
+      PII_FERNET_KEY: "${PII_FERNET_KEY:-olJNPob2Kd2LdHE8qlkElHijZ0QkI6xWfRS2mvZkvv0=}"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ./worker
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_USER: agentwatch
+      CLICKHOUSE_PASSWORD: agentwatch
+      DATABASE_URL: postgresql://agentwatch:agentwatch@postgres:5432/agentwatch
+      PII_FERNET_KEYS: "${PII_FERNET_KEYS:-olJNPob2Kd2LdHE8qlkElHijZ0QkI6xWfRS2mvZkvv0=,IYGRpbFEosZJoL7-KMuEaiTdSLsFuuN7EHyAXqleRyU=}"
+      PII_FERNET_KEY: "${PII_FERNET_KEY:-olJNPob2Kd2LdHE8qlkElHijZ0QkI6xWfRS2mvZkvv0=}"
+    depends_on:
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy

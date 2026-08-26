@@ -82,3 +82,25 @@ API keys have an `ingest` scope by default. Grant `unmask` explicitly only to au
 ## Dashboard
 
 Copy `dashboard/.env.example` to `dashboard/.env.local` and provide the Clerk keys, database URL, ingestion API URL, and a dashboard service key. In Clerk, configure a webhook for `organization.created` at `/api/webhooks/clerk`; the dashboard stores the resulting Clerk organization ID in Postgres before serving its data.
+
+## End-to-end testing
+
+Run the full end-to-end integration test against live Docker instances of Postgres, ClickHouse, Redis, Ingestion API, and Worker:
+
+```bash
+# 1. Bring up the test cluster with layered compose
+docker compose -f docker-compose.test.yml up -d --build --wait
+
+# 2. Run the E2E pytest suite
+pytest e2e/ -v
+
+# 3. Teardown test cluster
+docker compose -f docker-compose.test.yml down -v
+```
+
+The test validates the complete pipeline lifecycle:
+1. Waits for all services to report healthy (`/healthz`, Postgres, ClickHouse, Redis).
+2. Submits spans with sensitive personal data (Email, Indian Aadhaar).
+3. Verifies that ClickHouse stores masked tokens and zero plaintext PII.
+4. Verifies that `POST /v1/spans/{span_id}/unmask` decrypts and recovers original plaintexts using `MultiFernet`.
+5. Verifies that Postgres `audit_log` records the unmask access event.
