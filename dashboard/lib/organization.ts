@@ -20,8 +20,11 @@ export async function currentOrganization() {
 export async function ingestion(path: string, init: RequestInit = {}) {
   const url = process.env.INGESTION_API_URL || "http://127.0.0.1:8000";
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 400); // 400ms fast timeout
     const response = await fetch(`${url}${path}`, {
       ...init,
+      signal: controller.signal,
       headers: {
         "X-AgentWatch-Key": process.env.DASHBOARD_API_KEY ?? "development",
         "Content-Type": "application/json",
@@ -29,11 +32,12 @@ export async function ingestion(path: string, init: RequestInit = {}) {
       },
       cache: "no-store",
     });
+    clearTimeout(timeoutId);
     if (response.ok || response.status === 202) {
       return response;
     }
   } catch {
-    // Ingestion API is offline; fallback handled downstream
+    // Ingestion API is offline or timed out; fallback handled instantly
   }
 
   // Generate mock fallback response if backend is offline during frontend preview
