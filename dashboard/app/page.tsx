@@ -25,7 +25,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-white/5 py-10 text-center text-xs font-mono text-slate-500 space-y-2">
-        <p>NetrAI © 2026. Open-Source Multi-Agent Observability & Governance Engine.</p>
+        <p>AgentWatch © 2026. Open-Source Multi-Agent Observability & Governance Engine.</p>
         <p className="text-[11px] text-slate-600">
           SOC 2 Type II • HIPAA Ready • SHA-256 Tamper-Evident • Model Context Protocol (MCP) Compatible
         </p>

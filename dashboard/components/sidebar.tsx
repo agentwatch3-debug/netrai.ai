@@ -36,9 +36,9 @@ export function Sidebar() {
       <div className="mb-8 flex items-center justify-between px-2">
         <Link className="flex items-center gap-2 text-lg font-bold tracking-tight text-white" href="/dashboard">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-xs font-black text-white">
-            NA
+            AW
           </div>
-          <span>netrai</span>
+          <span>agentwatch</span>
         </Link>
         <span className="rounded border border-blue-900/60 bg-blue-950/40 px-1.5 py-0.5 text-[10px] font-semibold text-blue-400">
           v1.0
@@ -95,7 +95,7 @@ export function Sidebar() {
               <div className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-800">
                 <User size={12} className="text-slate-300" />
               </div>
-              <span className="truncate">dev-admin@netrai.local</span>
+              <span className="truncate">dev-admin@agentwatch.local</span>
             </div>
           </div>
         )}

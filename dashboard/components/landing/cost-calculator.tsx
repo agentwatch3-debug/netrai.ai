@@ -28,7 +28,7 @@ export function CostCalculator() {
             Estimate Swarm Spend & Runaway Protection
           </h2>
           <p className="text-sm text-slate-400">
-            Calculate your monthly LLM token volume and simulate how NetrAI prevents catastrophic runaway loop bills.
+            Calculate your monthly LLM token volume and simulate how AgentWatch prevents catastrophic runaway loop bills.
           </p>
         </div>
 
@@ -113,7 +113,7 @@ export function CostCalculator() {
               <div>
                 <strong className="block text-white font-bold">Infinite Loop Protection Active</strong>
                 <span>
-                  Without circuit breakers, an agent loop could burn up to ~${loopRunawayRiskUsd.toFixed(0)} before manual detection. NetrAI kills it at $50.00.
+                  Without circuit breakers, an agent loop could burn up to ~${loopRunawayRiskUsd.toFixed(0)} before manual detection. AgentWatch kills it at $50.00.
                 </span>
               </div>
             </div>
