@@ -39,10 +39,12 @@ from app.routers.spans import (
     SpanType,
     router as spans_router,
 )
+from app.startup_checks import run_startup_checks
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    run_startup_checks()
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     if SPAN_BACKEND == "redis" or not AUTH_DISABLED:
         state.redis = Redis.from_url(redis_url, decode_responses=True)

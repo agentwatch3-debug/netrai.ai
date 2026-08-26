@@ -87,10 +87,18 @@ PII_FERNET_KEY=<GENERATED_FERNET_KEY>
 # Worker Retention Cleaner Configuration
 RETENTION_CHECK_INTERVAL_SECONDS=3600
 
-# Edge Security & Rate Limiting
+# Edge Security, Environment & Rate Limiting
+ENVIRONMENT=production
 SPAN_BACKEND=redis
 AUTH_DISABLED=false
 RATE_LIMIT_PER_MINUTE=600
+```
+
+> [!CAUTION]
+> **CRITICAL SECURITY REQUIREMENT — `AUTH_DISABLED` Policy**:
+> `AUTH_DISABLED` is strictly intended for local development and offline unit testing. It **MUST NEVER** be set to `true` in staging, pre-production, or production environments.
+> 
+> The Ingestion API enforces an automated startup safety check: if `AUTH_DISABLED=true` when `ENVIRONMENT` is `production`, `staging`, or unset, the application will raise a `RuntimeError` and terminate immediately.
 ```
 
 ---
@@ -180,3 +188,16 @@ Headers:
 ```
 
 Every audit export is itself recorded in `audit_log` under action `data_access` to maintain a tamper-evident audit trail.
+
+---
+
+## 8. Pre-Production & Production Deployment Checklist
+
+Before going live in any staging, QA, or production cloud environment, verify the following security items:
+
+- [ ] **Authentication Enabled**: Ensure `AUTH_DISABLED=false` is explicitly set in the deployment manifest or environment secrets.
+- [ ] **Environment Declared**: Ensure `ENVIRONMENT=production` or `ENVIRONMENT=staging` is specified.
+- [ ] **KMS / Fernet Secret Provisioned**: Verify `PII_FERNET_KEY` is loaded securely from cloud KMS or secrets manager and never hardcoded in repository files.
+- [ ] **Database Connection Strings Encrypted**: Verify `DATABASE_URL` specifies SSL (`sslmode=require` or `sslmode=verify-full`).
+- [ ] **Redis Connection Authenticated**: Verify `REDIS_URL` uses TLS (`rediss://`) and secure authentication tokens.
+- [ ] **ClickHouse Network Isolation**: Confirm ClickHouse cluster is restricted to internal VPC subnets.
