@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, MultiFernet
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, model_validator
 
@@ -101,9 +101,15 @@ async def unmask_span(span_id: str, api_key: ApiKey = Depends(authenticate)) -> 
     """Return authorized replacements; callers apply them to the masked span payload."""
     if not AUTH_DISABLED and "unmask" not in api_key.scopes:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="API key lacks unmask scope")
-    fernet_key = os.getenv("PII_FERNET_KEY")
-    if not fernet_key:
+    fernet_keys_raw = os.getenv("PII_FERNET_KEYS") or os.getenv("PII_FERNET_KEY")
+    if not fernet_keys_raw:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="PII unmasking is not configured")
+    try:
+        keys_list = [k.strip() for k in fernet_keys_raw.split(",") if k.strip()]
+        multi_fernet = MultiFernet([Fernet(k.encode()) for k in keys_list])
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Invalid Fernet key configuration: {exc}")
+
     if state.postgres is None:
         state.memory_audit_logs.append({
             "id": len(state.memory_audit_logs) + 1,
@@ -116,6 +122,6 @@ async def unmask_span(span_id: str, api_key: ApiKey = Depends(authenticate)) -> 
         })
         return {"span_id": span_id, "replacements": {}}
     records = await state.postgres.fetch("SELECT token, encrypted_value FROM pii_mappings WHERE org_id = $1 AND span_id = $2", api_key.org_id, span_id)
-    replacements = {record["token"]: Fernet(fernet_key.encode()).decrypt(record["encrypted_value"].encode()).decode() for record in records}
+    replacements = {record["token"]: multi_fernet.decrypt(record["encrypted_value"].encode()).decode() for record in records}
     await state.postgres.execute("INSERT INTO audit_log (org_id, api_key_hash, action, span_id) VALUES ($1, $2, 'unmask', $3)", api_key.org_id, api_key.key_hash, span_id)
     return {"span_id": span_id, "replacements": replacements}

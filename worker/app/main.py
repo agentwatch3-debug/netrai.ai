@@ -49,7 +49,10 @@ def get_circuit_breaker_engine() -> CircuitBreakerEngine:
 def get_pii_engine() -> PiiEngine:
     global pii_engine
     if pii_engine is None:
-        pii_engine = PiiEngine(os.environ["PII_FERNET_KEY"])
+        raw_keys = os.getenv("PII_FERNET_KEYS") or os.getenv("PII_FERNET_KEY")
+        if not raw_keys:
+            raise RuntimeError("PII encryption keys not configured. Set PII_FERNET_KEYS or PII_FERNET_KEY.")
+        pii_engine = PiiEngine(raw_keys)
     return pii_engine
 
 

@@ -65,9 +65,19 @@ Use `with trace_llm() as span:` and call `span.record_response(response)` when a
 
 ## PII masking and unmasking
 
-Before running the worker, set a shared Fernet key for the worker and ingestion API. Generate one with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`, then set it as `PII_FERNET_KEY`. The worker replaces detected PII in `input` and `output` with tokens before ClickHouse insertion and stores only encrypted token mappings in Postgres.
+Before running the worker and ingestion API, configure shared Fernet encryption keys via `PII_FERNET_KEYS` (or single `PII_FERNET_KEY`). Generate keys with:
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
 
-API keys have an `ingest` scope by default. Grant `unmask` explicitly only to audited, trusted keys. `POST /v1/spans/{span_id}/unmask` returns the authorized token replacements and records an audit entry.
+The worker replaces detected PII in `input` and `output` with tokens before ClickHouse insertion and stores only encrypted token mappings in Postgres.
+
+> [!IMPORTANT]
+> `PII_FERNET_KEYS` supports a comma-separated key ring (`PII_FERNET_KEYS="<new_key>,<old_key>"`) implementing `cryptography.fernet.MultiFernet`. The **first key** is used for all new encryptions, while **all keys** are attempted in order for unmasking and decryption.
+>
+> `PII_FERNET_KEYS` **must be identical** across both the `worker` and `ingestion-api` services, and stored in a secure secrets manager (never committed to git or stored in `.env.example` beyond placeholder values) for any real deployment. See [Key Rotation Guide](docs/key-rotation.md) for full rotation instructions.
+
+API keys have an `ingest` scope by default. Grant `unmask` explicitly only to audited, trusted keys. `POST /v1/spans/{span_id}/unmask` returns authorized token replacements and records an immutable audit entry.
 
 ## Dashboard
 
