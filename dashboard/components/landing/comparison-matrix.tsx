@@ -80,7 +80,7 @@ export function ComparisonMatrix() {
             Competitive Benchmarking
           </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            How AgentWatch Compares
+            How NetrAI Compares
           </h2>
           <p className="text-sm text-slate-400">
             Engineered specifically for autonomous multi-agent swarms with enterprise safety and zero vendor lock-in.
@@ -94,7 +94,7 @@ export function ComparisonMatrix() {
                 <tr>
                   <th className="py-3.5 px-4 font-semibold">Capabilities</th>
                   <th className="py-3.5 px-4 font-bold text-blue-400 bg-blue-950/30 text-center">
-                    AgentWatch
+                    NetrAI
                   </th>
                   <th className="py-3.5 px-4 font-medium text-slate-400 text-center">Langfuse</th>
                   <th className="py-3.5 px-4 font-medium text-slate-400 text-center">Maxim AI</th>

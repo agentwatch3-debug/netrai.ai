@@ -17,7 +17,7 @@ export function LandingHero() {
         <div className="flex justify-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-950/40 px-4 py-1.5 text-xs font-mono text-blue-300 backdrop-blur-md shadow-lg shadow-blue-500/10">
             <span className="flex h-2 w-2 rounded-full bg-blue-400 animate-ping" />
-            <span>AgentWatch 2.0 with Native MCP Server & Multi-Agent Graphs</span>
+            <span>NetrAI 2.0 with Native MCP Server & Multi-Agent Graphs</span>
             <ChevronRight size={13} className="text-blue-400" />
           </div>
         </div>

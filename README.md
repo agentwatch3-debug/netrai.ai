@@ -1,6 +1,6 @@
-# agentwatch
+# NetrAI (netrai)
 
-Monorepo for collecting, processing, storing, and visualizing agent execution spans.
+Monorepo for collecting, processing, storing, and visualizing multi-agent execution spans and governance telemetry.
 
 ## Services
 

@@ -19,7 +19,7 @@ export function LandingNavbar() {
             <Network className="h-4 w-4 text-white" />
           </div>
           <span className="text-sm font-bold tracking-tight text-white font-mono flex items-center gap-1.5">
-            AgentWatch <span className="text-[10px] text-blue-400 font-semibold px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60">v2.4 LTS</span>
+            NetrAI <span className="text-[10px] text-blue-400 font-semibold px-1.5 py-0.5 rounded bg-blue-950/60 border border-blue-800/60">v2.4 LTS</span>
           </span>
         </Link>
 
