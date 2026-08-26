@@ -6,12 +6,12 @@ import { currentOrganization } from "@/lib/organization";
 const PLANS: Record<string, { amount: number; name: string; description: string }> = {
   pro: {
     amount: 249900, // ₹2,499.00
-    name: "AgentWatch Pro Plan",
+    name: "NetrAI Pro Plan",
     description: "1,000,000 Spans/mo + Cost Killswitch + Injection Shield",
   },
   team: {
     amount: 829900, // ₹8,299.00
-    name: "AgentWatch Team Plan",
+    name: "NetrAI Team Plan",
     description: "10,000,000 Spans/mo + GDPR Workflow + SSO + Dedicated Support",
   },
 };
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       notes: {
         org_id: org.orgId,
         plan_tier: planTier,
-        app: "AgentWatch",
+        app: "NetrAI",
       },
     };
 

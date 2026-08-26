@@ -59,7 +59,7 @@ async def lifespan(_: FastAPI):
         await state.postgres.close()
 
 
-app = FastAPI(title="AgentWatch Ingestion API", lifespan=lifespan)
+app = FastAPI(title="NetrAI Ingestion API", lifespan=lifespan)
 
 
 @app.get("/healthz")

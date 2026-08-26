@@ -75,7 +75,7 @@ export function BillingSettings() {
         key: orderData.key_id,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: "AgentWatch",
+        name: "NetrAI",
         description: orderData.name,
         order_id: orderData.order_id,
         theme: { color: "#3b82f6" },
