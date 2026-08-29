@@ -40,13 +40,6 @@ Inspect hierarchical agent executions (parent agent $\rightarrow$ sub-agents $\r
 
 ---
 
-### 3. SuperAdmin Management Console & Prompt Security Shield
-Unified platform administration console for multi-tenant subscription management, quota progress tracking, live cross-tenant adversarial prompt injection detection feeds (DAN, role override, delimiter jailbreaks), and SHA-256 tamper-evident cryptographic audit logs.
-
-![NetrAI SuperAdmin Console & Security Shield](docs/images/netrai-admin-security.jpg)
-
----
-
 ## 📦 Services
 
 - `sdk-python` — Python client for emitting OpenTelemetry-compatible spans and agent topology events.
