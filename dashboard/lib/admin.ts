@@ -1,5 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 
+const DEFAULT_SUPERADMIN_EMAILS = ["agentwatch3@gmail.com"];
+
 export async function isSuperAdmin(): Promise<boolean> {
   if (!process.env.CLERK_SECRET_KEY) {
     return true; // Local dev mode without Clerk credentials
@@ -15,20 +17,17 @@ export async function isSuperAdmin(): Promise<boolean> {
       return true;
     }
 
-    // Check 2: Allowed Admin Emails
+    // Check 2: Allowed Admin Emails (from Environment Variable + Default SuperAdmin)
     const adminEmailsRaw = process.env.ADMIN_USER_EMAILS || process.env.NEXT_PUBLIC_ADMIN_USER_EMAILS || "";
-    const adminEmails = adminEmailsRaw
+    const customAdminEmails = adminEmailsRaw
       .split(",")
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean);
 
-    if (adminEmails.length > 0) {
-      const userEmails = user.emailAddresses.map((e) => e.emailAddress.toLowerCase());
-      return userEmails.some((email) => adminEmails.includes(email));
-    }
+    const allowedEmails = new Set([...DEFAULT_SUPERADMIN_EMAILS, ...customAdminEmails]);
 
-    // Default: allow access if no specific email filter configured yet, or protect with UI security gate
-    return true;
+    const userEmails = user.emailAddresses.map((e) => e.emailAddress.toLowerCase());
+    return userEmails.some((email) => allowedEmails.has(email));
   } catch {
     return false;
   }
