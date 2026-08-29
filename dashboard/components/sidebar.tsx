@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Building2, CheckCircle2, CreditCard, Database, FileCode2, FileSpreadsheet, FileText, KeyRound, Lock, MessagesSquare, Network, Radio, Scale, Share2, ShieldAlert, ShieldCheck, User, Users, UserX, ZapOff } from "lucide-react";
+import { BarChart3, Building2, CheckCircle2, CreditCard, Database, FileCode2, FileSpreadsheet, FileText, KeyRound, Lock, MessagesSquare, Network, Radio, Scale, Share2, ShieldAlert, ShieldCheck, SlidersHorizontal, User, Users, UserX, ZapOff } from "lucide-react";
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 
 const links = [
@@ -24,6 +24,7 @@ const links = [
   { href: "/settings/circuit-breaker", label: "Circuit Breaker", icon: ZapOff },
   { href: "/settings/api-keys", label: "API keys", icon: KeyRound },
   { href: "/settings/billing", label: "Billing", icon: CreditCard },
+  { href: "/admin", label: "Admin Console", icon: SlidersHorizontal },
 ];
 
 export function Sidebar() {

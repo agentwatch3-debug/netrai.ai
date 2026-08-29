@@ -4,11 +4,9 @@ import { Sidebar } from "@/components/sidebar";
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   if (process.env.CLERK_SECRET_KEY) {
-    try {
-      const { userId } = await auth();
-      if (!userId) redirect("/sign-in");
-    } catch {
-      // In development fallback, proceed
+    const { userId } = await auth();
+    if (!userId) {
+      redirect("/sign-in");
     }
   }
 
