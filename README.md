@@ -6,6 +6,10 @@
 
 **Open-Source Multi-Agent Observability, Security & Governance Platform**
 
+[![Live Dashboard](https://img.shields.io/badge/Live%20Platform-agentwatch--19dt.vercel.app-6366f1?style=for-the-badge&logo=vercel&logoColor=white)](https://agentwatch-19dt.vercel.app/)
+
+<br />
+
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Next.js 14](https://img.shields.io/badge/Next.js-14.2-black.svg)](https://nextjs.org/)
@@ -13,6 +17,8 @@
 [![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
 [![Redis 7](https://img.shields.io/badge/Redis-7.0-red.svg)](https://redis.io/)
 [![DPDP India Compliant](https://img.shields.io/badge/DPDP_India-ap--south--1_Pinned-emerald.svg)](docs/dpdp-deployment.md)
+
+🌐 **Live Application URL**: [https://agentwatch-19dt.vercel.app](https://agentwatch-19dt.vercel.app)
 
 </div>
 
