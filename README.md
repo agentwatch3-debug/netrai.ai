@@ -1,26 +1,77 @@
 # NetrAI (netrai)
 
-Monorepo for collecting, processing, storing, and visualizing multi-agent execution spans and governance telemetry.
+<div align="center">
 
-## Services
+![NetrAI Architecture & Data Pipeline](docs/images/netrai-architecture-flow.jpg)
 
-- `sdk-python` — Python client for emitting OpenTelemetry-compatible spans.
-- `ingestion-api` — FastAPI endpoint that validates and publishes spans to Redis Streams.
-- `worker` — Redis Streams consumer that persists spans to ClickHouse.
-- `dashboard` — Next.js 14 dashboard.
-- `infra` — local ClickHouse, PostgreSQL, and Redis services.
+**Open-Source Multi-Agent Observability, Security & Governance Platform**
 
-## Local infrastructure
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Next.js 14](https://img.shields.io/badge/Next.js-14.2-black.svg)](https://nextjs.org/)
+[![ClickHouse 24.8](https://img.shields.io/badge/ClickHouse-24.8-yellow.svg)](https://clickhouse.com/)
+[![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
+[![Redis 7](https://img.shields.io/badge/Redis-7.0-red.svg)](https://redis.io/)
+[![DPDP India Compliant](https://img.shields.io/badge/DPDP_India-ap--south--1_Pinned-emerald.svg)](docs/dpdp-deployment.md)
 
-```sh
+</div>
+
+---
+
+## 🚀 Overview
+
+**NetrAI** is an enterprise-grade observability and governance engine designed specifically for autonomous multi-agent swarms (LangChain, AutoGen, CrewAI, OpenAI Assistants, Claude Swarms). It traps infinite tool loops with real-time cost circuit breakers, blocks adversarial prompt injections, reversibly sanitizes PII with Presidio and MultiFernet key rotation, and provides live native Model Context Protocol (MCP) telemetry.
+
+---
+
+## 📸 Platform Architecture & UI
+
+### 1. End-to-End Ingestion Pipeline & Architecture
+Autonomous agent swarms emit OpenTelemetry-compatible traces via Redis Streams into the high-throughput Ingestion API. Sensitive PII (Emails, Aadhaar, PAN, API keys) is tokenized with Presidio and encrypted into PostgreSQL using a rotating Fernet keyring (`MultiFernet`), while high-cardinality telemetry persists to ClickHouse 24.8 MergeTree.
+
+![NetrAI End-to-End Pipeline](docs/images/netrai-architecture-flow.jpg)
+
+---
+
+### 2. Multi-Agent Trace Waterfall & Cost Circuit Breakers
+Inspect hierarchical agent executions (parent agent $\rightarrow$ sub-agents $\rightarrow$ tools) with millisecond latency breakdowns, token spend tracking, and automatic loop killswitches that sever runaway agent cycles before they cause thousands of dollars in surprise API bills.
+
+![NetrAI Trace Waterfall Timeline](docs/images/netrai-live-trace-waterfall.jpg)
+
+---
+
+### 3. SuperAdmin Management Console & Prompt Security Shield
+Unified platform administration console for multi-tenant subscription management, quota progress tracking, live cross-tenant adversarial prompt injection detection feeds (DAN, role override, delimiter jailbreaks), and SHA-256 tamper-evident cryptographic audit logs.
+
+![NetrAI SuperAdmin Console & Security Shield](docs/images/netrai-admin-security.jpg)
+
+---
+
+## 📦 Services
+
+- `sdk-python` — Python client for emitting OpenTelemetry-compatible spans and agent topology events.
+- `ingestion-api` — FastAPI endpoint that validates, sanitizes, and publishes spans to Redis Streams.
+- `worker` — High-throughput Redis Streams consumer that persists sanitized spans to ClickHouse and encrypted PII tokens to PostgreSQL.
+- `dashboard` — Next.js 14 App Router dashboard with live trace waterfalls, eval metrics, and SuperAdmin tenant management.
+- `infra` — Local ClickHouse, PostgreSQL, and Redis container definitions.
+
+---
+
+## 🛠️ Local Infrastructure Setup
+
+Bring up the complete data cluster with Docker Compose:
+
+```bash
 docker compose -f infra/docker-compose.yml up -d
 ```
 
-See `docs/schema.md` for the canonical event schema and storage DDL.
+See [`docs/schema.md`](docs/schema.md) for canonical event schemas and database DDL.
 
-## Develop without Docker
+---
 
-The ingestion API can run with an in-memory span store while Docker is unavailable. From PowerShell:
+## 💻 Develop without Docker
+
+The ingestion API can run with an in-memory span store while Docker is unavailable:
 
 ```powershell
 cd ingestion-api
@@ -31,9 +82,9 @@ $env:SPAN_BACKEND = "memory"
 uvicorn app.main:app --reload
 ```
 
-The API is then available at `http://127.0.0.1:8000`; view its interactive API at `/docs`. Memory-mode data is discarded when the API restarts.
+Interactive OpenAPI docs will be available at `http://127.0.0.1:8000/docs`.
 
-Run the dashboard separately:
+Run the Next.js 14 dashboard separately:
 
 ```powershell
 cd dashboard
@@ -41,9 +92,11 @@ npm install
 npm run dev
 ```
 
-## Python SDK
+---
 
-Install locally with `pip install -e ./sdk-python`. Configure `AGENTWATCH_API_KEY`, `AGENTWATCH_ENDPOINT`, and optionally `AGENTWATCH_ORG_ID`, then trace provider calls or arbitrary tools:
+## 🐍 Python SDK Quickstart
+
+Install locally with `pip install -e ./sdk-python`. Configure `AGENTWATCH_API_KEY`, `AGENTWATCH_ENDPOINT`, and trace agent hierarchies:
 
 ```python
 from agentwatch import trace_agent, trace_llm, trace_tool
@@ -56,16 +109,17 @@ def ask_model():
 def search(query):
     return index.search(query)
 
-with trace_agent("research", agent_id="researcher"):
-    search("pricing")
+with trace_agent("research_pipeline", agent_id="researcher_01"):
+    search("quarterly earnings")
     ask_model()
 ```
 
-Use `with trace_llm() as span:` and call `span.record_response(response)` when a context-manager style is preferred.
+---
 
-## PII masking and unmasking
+## 🔐 PII Masking & Cryptographic Key Rotation
 
-Before running the worker and ingestion API, configure shared Fernet encryption keys via `PII_FERNET_KEYS` (or single `PII_FERNET_KEY`). Generate keys with:
+Configure shared encryption keys via `PII_FERNET_KEYS` (or legacy `PII_FERNET_KEY`):
+
 ```bash
 python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
@@ -75,15 +129,13 @@ The worker replaces detected PII in `input` and `output` with tokens before Clic
 > [!IMPORTANT]
 > `PII_FERNET_KEYS` supports a comma-separated key ring (`PII_FERNET_KEYS="<new_key>,<old_key>"`) implementing `cryptography.fernet.MultiFernet`. The **first key** is used for all new encryptions, while **all keys** are attempted in order for unmasking and decryption.
 >
-> `PII_FERNET_KEYS` **must be identical** across both the `worker` and `ingestion-api` services, and stored in a secure secrets manager (never committed to git or stored in `.env.example` beyond placeholder values) for any real deployment. See [Key Rotation Guide](docs/key-rotation.md) for full rotation instructions.
+> `PII_FERNET_KEYS` **must be identical** across both the `worker` and `ingestion-api` services, and stored in a secure secrets manager for production deployments. See [Key Rotation Guide](docs/key-rotation.md) for zero-downtime rotation instructions.
 
 API keys have an `ingest` scope by default. Grant `unmask` explicitly only to audited, trusted keys. `POST /v1/spans/{span_id}/unmask` returns authorized token replacements and records an immutable audit entry.
 
-## Dashboard
+---
 
-Copy `dashboard/.env.example` to `dashboard/.env.local` and provide the Clerk keys, database URL, ingestion API URL, and a dashboard service key. In Clerk, configure a webhook for `organization.created` at `/api/webhooks/clerk`; the dashboard stores the resulting Clerk organization ID in Postgres before serving its data.
-
-## End-to-end testing
+## 🧪 End-to-End Testing
 
 Run the full end-to-end integration test against live Docker instances of Postgres, ClickHouse, Redis, Ingestion API, and Worker:
 
@@ -98,9 +150,15 @@ pytest e2e/ -v
 docker compose -f docker-compose.test.yml down -v
 ```
 
-The test validates the complete pipeline lifecycle:
-1. Waits for all services to report healthy (`/healthz`, Postgres, ClickHouse, Redis).
-2. Submits spans with sensitive personal data (Email, Indian Aadhaar).
-3. Verifies that ClickHouse stores masked tokens and zero plaintext PII.
-4. Verifies that `POST /v1/spans/{span_id}/unmask` decrypts and recovers original plaintexts using `MultiFernet`.
-5. Verifies that Postgres `audit_log` records the unmask access event.
+The test suite validates:
+1. Healthcheck synchronization across all services (`/healthz`, Postgres, ClickHouse, Redis).
+2. Trace submission containing personal data (Email, Indian Aadhaar).
+3. Verification that ClickHouse stores masked tokens with zero raw PII leakage.
+4. Token unmasking via `POST /v1/spans/{span_id}/unmask` with `MultiFernet`.
+5. Immutable audit entry generation in PostgreSQL `audit_log`.
+
+---
+
+## 🛡️ License
+
+Apache License 2.0. See [LICENSE](LICENSE) for details.
