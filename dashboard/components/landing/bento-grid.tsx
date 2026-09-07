@@ -116,14 +116,14 @@ export function BentoGrid() {
                 <h3 className="text-base font-bold text-white">Tamper-Evident Cryptographic Audit Chains</h3>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Blockchain-style SHA-256 hash chains with database-level append-only enforcement (REVOKE UPDATE/DELETE) for SOC 2 and HIPAA non-repudiation.
+                Sequential SHA-256 hash chains with database-level append-only enforcement (REVOKE UPDATE/DELETE) designed to support SOC 2 and HIPAA compliance workflows.
               </p>
             </div>
 
             <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-3 font-mono text-[11px] text-slate-300 flex flex-wrap items-center justify-between gap-2">
               <span className="text-slate-400">Prev Hash: <span className="text-slate-600">00000000...</span></span>
               <span className="text-emerald-400 font-bold">SHA256(Block #1) ➔ Entry Hash: c9102938...</span>
-              <Badge className="bg-emerald-950 text-emerald-300 border-emerald-800 text-[9px]">100% IMMUTABLE</Badge>
+              <Badge className="bg-emerald-950 text-emerald-300 border-emerald-800 text-[9px]">Tamper-Evident</Badge>
             </div>
 
             <div className="pt-4 flex justify-end">

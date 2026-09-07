@@ -16,8 +16,8 @@ export default function SsoSetupDocPage() {
             <ArrowLeft size={14} /> Back to SSO Settings
           </Link>
           <div className="flex items-center gap-2">
-            <Badge className="bg-emerald-950/80 text-emerald-400 border-emerald-800 text-[10px] font-mono">
-              SAML 2.0 Certified
+            <Badge className="bg-blue-950/80 text-blue-400 border-blue-800 text-[10px] font-mono">
+              SAML 2.0 Compatible
             </Badge>
           </div>
         </div>
@@ -167,6 +167,13 @@ export default function SsoSetupDocPage() {
           >
             Configure SSO Now
           </Link>
+        </div>
+
+        {/* Compliance Notice */}
+        <div className="border-t border-slate-800/80 pt-6 text-center">
+          <p className="text-[11px] font-mono text-slate-500 max-w-xl mx-auto">
+            Compliance Notice: NetrAI provides tooling designed to support DPDP, SOC 2, and HIPAA compliance workflows. NetrAI itself has not completed SOC 2 or HIPAA certification at this time.
+          </p>
         </div>
       </div>
     </div>

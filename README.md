@@ -16,7 +16,7 @@
 [![ClickHouse 24.8](https://img.shields.io/badge/ClickHouse-24.8-yellow.svg)](https://clickhouse.com/)
 [![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
 [![Redis 7](https://img.shields.io/badge/Redis-7.0-red.svg)](https://redis.io/)
-[![DPDP India Compliant](https://img.shields.io/badge/DPDP_India-ap--south--1_Pinned-emerald.svg)](docs/dpdp-deployment.md)
+[![DPDP India Regional Pinning](https://img.shields.io/badge/DPDP_India-ap--south--1_Pinned-emerald.svg)](docs/dpdp-deployment.md)
 
 🌐 **Live Application URL**: [https://agentwatch-19dt.vercel.app](https://agentwatch-19dt.vercel.app)
 
@@ -154,7 +154,13 @@ The test suite validates:
 2. Trace submission containing personal data (Email, Indian Aadhaar).
 3. Verification that ClickHouse stores masked tokens with zero raw PII leakage.
 4. Token unmasking via `POST /v1/spans/{span_id}/unmask` with `MultiFernet`.
-5. Immutable audit entry generation in PostgreSQL `audit_log`.
+5. Append-only, tamper-evident audit entry generation in PostgreSQL `audit_log`.
+
+---
+
+## ⚖️ Compliance Notice
+
+NetrAI provides tooling designed to support DPDP, SOC 2, and HIPAA compliance workflows. NetrAI itself has not completed SOC 2 or HIPAA certification at this time.
 
 ---
 

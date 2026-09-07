@@ -93,7 +93,7 @@ export default function AuditLogPage() {
         <div>
           <h1 className="text-xl font-semibold text-white">Tamper-Evident Cryptographic Audit Log</h1>
           <p className="text-sm text-slate-400">
-            Immutable, append-only security log secured by per-organization SHA-256 hash chains (SOC 2 / HIPAA compliance).
+            Append-only, tamper-evident security log secured by per-organization SHA-256 hash chains designed to support SOC 2 and HIPAA compliance workflows.
           </p>
         </div>
 
@@ -148,7 +148,7 @@ export default function AuditLogPage() {
                       : "bg-red-950 text-red-300 border-red-800 text-[10px] font-mono"
                   }
                 >
-                  {isIntact ? "100% IMMUTABLE" : "CHAIN CORRUPTED"}
+                  {isIntact ? "Tamper-Evident (Intact)" : "CHAIN CORRUPTED"}
                 </Badge>
               </div>
               <p className="text-xs text-slate-400">

@@ -61,6 +61,13 @@ jobs:
           agentwatch test run --dataset customer-support-v1 --runner app/agent.py:run_agent --min-score 0.85`}
           </pre>
         </Card>
+
+        {/* Compliance Notice */}
+        <div className="border-t border-slate-800/80 pt-6 text-center">
+          <p className="text-[11px] font-mono text-slate-500 max-w-xl mx-auto">
+            Compliance Notice: NetrAI provides tooling designed to support DPDP, SOC 2, and HIPAA compliance workflows. NetrAI itself has not completed SOC 2 or HIPAA certification at this time.
+          </p>
+        </div>
       </div>
     </div>
   );

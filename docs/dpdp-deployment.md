@@ -201,3 +201,9 @@ Before going live in any staging, QA, or production cloud environment, verify th
 - [ ] **Database Connection Strings Encrypted**: Verify `DATABASE_URL` specifies SSL (`sslmode=require` or `sslmode=verify-full`).
 - [ ] **Redis Connection Authenticated**: Verify `REDIS_URL` uses TLS (`rediss://`) and secure authentication tokens.
 - [ ] **ClickHouse Network Isolation**: Confirm ClickHouse cluster is restricted to internal VPC subnets.
+
+---
+
+## 9. Compliance Notice
+
+NetrAI provides tooling designed to support DPDP, SOC 2, and HIPAA compliance workflows. NetrAI itself has not completed SOC 2 or HIPAA certification at this time. Deployment architectures should be independently reviewed by your organization's legal and compliance teams.

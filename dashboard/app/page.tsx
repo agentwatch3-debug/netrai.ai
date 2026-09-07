@@ -26,8 +26,11 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-white/5 py-10 text-center text-xs font-mono text-slate-500 space-y-2">
         <p>NetrAI © 2026. Open-Source Multi-Agent Observability & Governance Engine.</p>
-        <p className="text-[11px] text-slate-600">
-          SOC 2 Type II • HIPAA Ready • SHA-256 Tamper-Evident • Model Context Protocol (MCP) Compatible
+        <p className="text-[11px] text-slate-400">
+          SHA-256 Tamper-Evident Audit Chains • Model Context Protocol (MCP) Compatible
+        </p>
+        <p className="text-[10px] text-slate-600 max-w-xl mx-auto pt-1">
+          Compliance Notice: NetrAI provides tooling designed to support DPDP, SOC 2, and HIPAA compliance workflows. NetrAI itself has not completed SOC 2 or HIPAA certification at this time.
         </p>
       </footer>
     </div>

@@ -174,7 +174,7 @@ export default function ConsentCompliancePage() {
             <ShieldCheck size={16} className="text-blue-400" />
           </div>
           <p className="text-base font-bold text-white font-mono pt-2">
-            {openGapsCount === 0 ? "100% Verified Compliant" : "Review Required"}
+            {openGapsCount === 0 ? "No Gaps Detected" : "Review Required"}
           </p>
           <p className="text-[11px] text-slate-500">Continuous PII masking & consent verification</p>
         </Card>

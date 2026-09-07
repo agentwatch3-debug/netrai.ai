@@ -39,8 +39,8 @@ export function ComparisonMatrix() {
       langsmith: false,
     },
     {
-      name: "Zero-Day Prompt Injection Defense",
-      desc: "Pre-execution regex & semantic LLM judge classifier",
+      name: "Heuristic & Semantic Prompt Injection Defense",
+      desc: "Pre-execution pattern matching & semantic LLM judge classifier",
       agentwatch: true,
       langfuse: false,
       maxim: true,

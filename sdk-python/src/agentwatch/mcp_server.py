@@ -319,7 +319,7 @@ class AgentWatchMCPServer:
                 "chain_status": "verified",
                 "broken_entry_id": None,
                 "head_hash": "c910293810293810293810293810293810293810293810293810293810293810",
-                "integrity": "100% IMMUTABLE (SHA-256 VERIFIED)",
+                "integrity": "Tamper-Evident (SHA-256 Verified)",
             }
 
         if tool_name == "get_topology_graph":
