@@ -48,7 +48,18 @@ class SpanExporter:
     def _flush(self) -> None:
         batch = self._take_batch()
         if batch:
-            asyncio.run(self._send(batch))
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+
+            if loop is not None and loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                    executor.submit(lambda: asyncio.run(self._send(batch))).result()
+            else:
+                asyncio.run(self._send(batch))
+
 
     def _run(self) -> None:
         while not self._closed:

@@ -1,6 +1,13 @@
 from .config import AgentWatchConfig, configure
 from .evals import score
-from .exceptions import InjectionDetected, OutputPolicyViolation, PolicyViolation, QuotaExceeded, TierRestrictedError
+from .exceptions import (
+    InjectionDetected,
+    LowConfidenceResponse,
+    OutputPolicyViolation,
+    PolicyViolation,
+    QuotaExceeded,
+    TierRestrictedError,
+)
 from .injection_detector import detect_prompt_injection
 from .instrumentation import (
     AgentWatchCallbackHandler,
@@ -28,6 +35,7 @@ __all__ = [
     "AgentWatchCallbackHandler",
     "AgentWatchConfig",
     "InjectionDetected",
+    "LowConfidenceResponse",
     "OutputPolicyViolation",
     "PolicyViolation",
     "PromptTemplate",

@@ -240,3 +240,67 @@ async def scan_policy_endpoint(payload: PolicyScanRequest, api_key: ApiKey = Dep
             for v in res.violations
         ],
     }
+
+
+class EvalGateRuleCreate(BaseModel):
+    agent_id: str = "*"
+    score_type: str = "faithfulness"  # "faithfulness" | "factuality"
+    threshold: float = 0.7
+    action: str = "block"  # "block" | "flag" | "reroute_to_model"
+    fallback_model: str | None = None
+    is_enabled: bool = True
+
+
+@router.get("/v1/policies/eval-gates")
+async def list_eval_gate_rules(agent_id: str | None = None, api_key: ApiKey = Depends(authenticate)) -> dict[str, Any]:
+    """List configured eval gate rules for the organization."""
+    if state.postgres is not None:
+        rows = await state.postgres.fetch(
+            """
+            SELECT id, org_id, agent_id, score_type, threshold, action, fallback_model, is_enabled, created_at, updated_at
+            FROM eval_gate_rules
+            WHERE org_id = $1 AND ($2::text IS NULL OR agent_id = $2 OR agent_id = '*')
+            ORDER BY id ASC
+            """,
+            api_key.org_id,
+            agent_id,
+        )
+        return {"data": [dict(r) for r in rows]}
+
+    return {
+        "data": [
+            {
+                "id": 1,
+                "org_id": api_key.org_id,
+                "agent_id": agent_id or "*",
+                "score_type": "faithfulness",
+                "threshold": 0.7,
+                "action": "block",
+                "fallback_model": None,
+                "is_enabled": True,
+            }
+        ]
+    }
+
+
+@router.post("/v1/policies/eval-gates")
+async def create_eval_gate_rule(req: EvalGateRuleCreate, api_key: ApiKey = Depends(authenticate)) -> dict[str, Any]:
+    """Create or update an evaluation gate rule."""
+    if state.postgres is not None:
+        row = await state.postgres.fetchrow(
+            """
+            INSERT INTO eval_gate_rules (org_id, agent_id, score_type, threshold, action, fallback_model, is_enabled)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id, org_id, agent_id, score_type, threshold, action, fallback_model, is_enabled
+            """,
+            api_key.org_id,
+            req.agent_id,
+            req.score_type,
+            req.threshold,
+            req.action,
+            req.fallback_model,
+            req.is_enabled,
+        )
+        return {"status": "created", "data": dict(row) if row else {}}
+    return {"status": "created", "data": req.model_dump()}
+

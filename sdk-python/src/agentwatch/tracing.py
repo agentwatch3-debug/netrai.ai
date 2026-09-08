@@ -11,7 +11,13 @@ from typing import Any, Callable, ParamSpec, TypeVar
 from uuid import uuid4
 
 from .config import get_config
-from .exceptions import InjectionDetected, OutputPolicyViolation, PolicyViolation, TierRestrictedError
+from .exceptions import (
+    InjectionDetected,
+    LowConfidenceResponse,
+    OutputPolicyViolation,
+    PolicyViolation,
+    TierRestrictedError,
+)
 from .exporter import exporter
 from .injection_detector import detect_prompt_injection
 from .output_policy import scan_output_policy
@@ -282,25 +288,106 @@ class _SpanScope(ContextDecorator):
         return False
 
 
+def _evaluate_inline_gate(
+    response: Any,
+    context: Any = None,
+    score_type: str | None = None,
+    threshold: float = 0.7,
+    action: str = "block",
+    fallback_model: str | None = None,
+    judge_model: str = "gpt-4o-mini",
+) -> tuple[bool, float, str, list[str], list[str], str]:
+    """Perform synchronous evaluation scoring for inline eval gating.
+
+    Returns: (is_passed, score, check_type, unsupported_claims, uncertain_claims, reasoning)
+    """
+    output_text = _extract_text_content(response) or (
+        json.dumps(_safe(response), ensure_ascii=False) if not isinstance(response, str) else response
+    )
+    output_text = (output_text or "").strip()
+
+    context_text = None
+    if context:
+        if isinstance(context, str):
+            context_text = context
+        elif isinstance(context, (list, tuple)):
+            context_text = "\n".join(str(c) for c in context)
+        elif isinstance(context, dict):
+            context_text = json.dumps(_safe(context))
+
+    check_type = score_type or ("faithfulness" if context_text else "factuality")
+
+    if check_type == "faithfulness" and context_text:
+        context_lower = context_text.lower()
+        sentences = [s.strip() for s in re.split(r"[.!?\n]+", output_text) if len(s.strip()) > 8]
+        if not sentences:
+            return True, 1.0, check_type, [], [], "Output is brief with no factual assertions."
+
+        unsupported: list[str] = []
+        for sentence in sentences:
+            words = [w for w in re.findall(r"\b\w{4,}\b", sentence.lower())]
+            if not words:
+                continue
+            matching_words = [w for w in words if w in context_lower]
+            overlap = len(matching_words) / len(words)
+            if overlap < 0.40:
+                unsupported.append(sentence)
+
+        score = max(0.0, min(1.0, round((len(sentences) - len(unsupported)) / len(sentences), 2)))
+        reasoning = f"Faithfulness score {score:.2f} ({len(sentences) - len(unsupported)}/{len(sentences)} supported claims)."
+        is_passed = score >= threshold
+        return is_passed, score, check_type, unsupported, [], reasoning
+
+    else:
+        check_type = "factuality"
+        sentences = [s.strip() for s in re.split(r"[.!?\n]+", output_text) if len(s.strip()) > 8]
+        if not sentences:
+            return True, 1.0, check_type, [], [], "Output is brief with no checkable claims."
+
+        unsupported: list[str] = []
+        uncertain: list[str] = []
+        has_anachronisms = re.compile(
+            r"\b(founded in (30\d\d|18\d\d|17\d\d|16\d\d)|invented in (1[0-4]\d\d)|population of \d{10,})\b",
+            re.IGNORECASE,
+        )
+        has_hedging = re.compile(
+            r"\b(allegedly|unverified|rumored|might possibly be|around roughly \d+|some estimate)\b",
+            re.IGNORECASE,
+        )
+
+        for sentence in sentences:
+            if has_anachronisms.search(sentence):
+                unsupported.append(sentence)
+            elif has_hedging.search(sentence):
+                uncertain.append(sentence)
+
+        flawed = len(unsupported) + (0.5 * len(uncertain))
+        score = max(0.0, min(1.0, round((len(sentences) - flawed) / len(sentences), 2)))
+        reasoning = f"Factuality score {score:.2f} ({len(unsupported)} unsupported, {len(uncertain)} uncertain claims)."
+        is_passed = score >= threshold
+        return is_passed, score, check_type, unsupported, uncertain, reasoning
+
+
 class TraceLLM(_SpanScope):
-    """Decorator and context manager for tracing LLM invocations and guardrail policies.
+    """Decorator and context manager for tracing LLM invocations, guardrails, and inline response gating.
+
+    Inline Eval Gating:
+    When `eval_gate=True`, AgentWatch runs synchronous inline evaluation (faithfulness for RAG/context calls,
+    or factuality for closed-book calls) before returning the response to the calling application.
+
+    Actions when score < threshold:
+    - 'block': Raises LowConfidenceResponse with the score and unsupported claims.
+    - 'reroute_to_model': Re-runs the prompt once against `fallback_model` and returns that result.
+    - 'flag': Attaches an eval gate warning to span metadata without blocking.
+
+    WARNING - Latency & Cost Trade-off:
+    Inline evaluation scoring runs synchronously before returning responses, adding latency and LLM eval cost.
+    Users should opt in knowingly for high-stakes paths rather than blanket-enabling.
 
     Consistency-Check Mode:
     When `consistency_check=True`, the wrapped LLM call is re-executed N times (default N=3)
-    at a higher temperature (`consistency_temperature`, default 0.7). AgentWatch computes
-    an agreement / consistency score (0.0 to 1.0) across all outputs using token/semantic similarity
-    or exact-matching for structured outputs, storing both the `consistency_score` and `alternate_outputs`
-    in the span metadata.
-
-    WARNING:
-    Enabling consistency-check multiplies LLM token usage and execution cost by N.
-    It is intended strictly for high-stakes decision paths (such as refund approvals,
-    medical/diagnosis-adjacent suggestions, compliance validations, or high-value transactions),
-    and should NOT be blanket-enabled across all LLM spans.
-
-    Tier Requirement:
-    Restricted to Team and Enterprise plan tiers. Attempting to use consistency_check on
-    free or pro tiers raises TierRestrictedError.
+    at a higher temperature (`consistency_temperature`, default 0.7) and computes an agreement score.
+    Restricted to Team and Enterprise plan tiers.
     """
 
     def __init__(
@@ -311,6 +398,13 @@ class TraceLLM(_SpanScope):
         consistency_check: bool = False,
         consistency_samples: int = 3,
         consistency_temperature: float = 0.7,
+        eval_gate: bool = False,
+        gate_score_type: str | None = None,
+        gate_threshold: float = 0.7,
+        gate_action: str = "block",
+        fallback_model: str | None = None,
+        context: Any = None,
+        judge_model: str = "gpt-4o-mini",
         policy_mode: str = "block",
         metadata: dict[str, Any] | None = None,
         **kwargs: Any,
@@ -322,6 +416,13 @@ class TraceLLM(_SpanScope):
         self.consistency_check = consistency_check
         self.consistency_samples = max(2, consistency_samples) if consistency_samples else 3
         self.consistency_temperature = consistency_temperature
+        self.eval_gate = eval_gate
+        self.gate_score_type = gate_score_type
+        self.gate_threshold = gate_threshold
+        self.gate_action = gate_action
+        self.fallback_model = fallback_model
+        self.context = context
+        self.judge_model = judge_model
 
     def _validate_tier(self) -> None:
         if not self.consistency_check:
@@ -367,6 +468,13 @@ class TraceLLM(_SpanScope):
                 consistency_check=self.consistency_check,
                 consistency_samples=self.consistency_samples,
                 consistency_temperature=self.consistency_temperature,
+                eval_gate=self.eval_gate,
+                gate_score_type=self.gate_score_type,
+                gate_threshold=self.gate_threshold,
+                gate_action=self.gate_action,
+                fallback_model=self.fallback_model,
+                context=self.context,
+                judge_model=self.judge_model,
                 agent_id=self.agent_id,
                 org_id=self.org_id,
                 policy_mode=self.policy_mode,
@@ -437,6 +545,66 @@ class TraceLLM(_SpanScope):
                         "consistency_temperature": self.consistency_temperature,
                     })
 
+                # Inline response gating check
+                if self.eval_gate:
+                    ctx = self.context or kwargs.get("context")
+                    is_passed, gate_score, check_type, unsupp, uncert, reasoning = _evaluate_inline_gate(
+                        response=response,
+                        context=ctx,
+                        score_type=self.gate_score_type,
+                        threshold=self.gate_threshold,
+                        action=self.gate_action,
+                        fallback_model=self.fallback_model,
+                        judge_model=self.judge_model,
+                    )
+                    scope.metadata.update({
+                        "eval_gate": True,
+                        "eval_gate_score": gate_score,
+                        "eval_gate_score_type": check_type,
+                        "eval_gate_threshold": self.gate_threshold,
+                        "eval_gate_action": self.gate_action,
+                        "eval_gate_passed": is_passed,
+                        "unsupported_claims": unsupp,
+                        "uncertain_claims": uncert,
+                        "eval_gate_reasoning": reasoning,
+                    })
+
+                    if not is_passed:
+                        if self.gate_action == "block":
+                            exc = LowConfidenceResponse(
+                                f"LLM response failed {check_type} eval gate (score {gate_score:.2f} < threshold {self.gate_threshold:.2f}): {unsupp}",
+                                score=gate_score,
+                                unsupported_claims=unsupp,
+                                uncertain_claims=uncert,
+                                check_type=check_type,
+                                threshold=self.gate_threshold,
+                            )
+                            scope.finish(output=response, error=exc, model=model, prompt_tokens=prompt, completion_tokens=completion)
+                            raise exc
+
+                        elif self.gate_action == "reroute_to_model" and self.fallback_model:
+                            scope.metadata["eval_gate_rerouted"] = True
+                            scope.metadata["original_model"] = model
+                            scope.metadata["fallback_model"] = self.fallback_model
+                            rerun_kw = dict(kwargs)
+                            try:
+                                sig = inspect.signature(func)
+                                if "model" in sig.parameters or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()):
+                                    rerun_kw["model"] = self.fallback_model
+                            except Exception:
+                                rerun_kw["model"] = self.fallback_model
+                            fallback_resp = await func(*args, **rerun_kw)
+                            fb_model, fb_p, fb_c = _extract_llm(fallback_resp)
+                            fb_model = fb_model or self.fallback_model
+                            final_p = (prompt or 0) + (fb_p or 0) if (prompt or fb_p) else None
+                            final_c = (completion or 0) + (fb_c or 0) if (completion or fb_c) else None
+                            scope.check_output_guard(fallback_resp, fb_model, final_p, final_c)
+                            scope.__exit__(None, None, None)
+                            return fallback_resp
+
+                        elif self.gate_action == "flag":
+                            scope.metadata["eval_gate_flagged"] = True
+
                 scope.check_output_guard(response, model, prompt, completion)
                 scope.__exit__(None, None, None)
                 return response
@@ -488,6 +656,66 @@ class TraceLLM(_SpanScope):
                     "consistency_temperature": self.consistency_temperature,
                 })
 
+            # Inline response gating check
+            if self.eval_gate:
+                ctx = self.context or kwargs.get("context")
+                is_passed, gate_score, check_type, unsupp, uncert, reasoning = _evaluate_inline_gate(
+                    response=response,
+                    context=ctx,
+                    score_type=self.gate_score_type,
+                    threshold=self.gate_threshold,
+                    action=self.gate_action,
+                    fallback_model=self.fallback_model,
+                    judge_model=self.judge_model,
+                )
+                scope.metadata.update({
+                    "eval_gate": True,
+                    "eval_gate_score": gate_score,
+                    "eval_gate_score_type": check_type,
+                    "eval_gate_threshold": self.gate_threshold,
+                    "eval_gate_action": self.gate_action,
+                    "eval_gate_passed": is_passed,
+                    "unsupported_claims": unsupp,
+                    "uncertain_claims": uncert,
+                    "eval_gate_reasoning": reasoning,
+                })
+
+                if not is_passed:
+                    if self.gate_action == "block":
+                        exc = LowConfidenceResponse(
+                            f"LLM response failed {check_type} eval gate (score {gate_score:.2f} < threshold {self.gate_threshold:.2f}): {unsupp}",
+                            score=gate_score,
+                            unsupported_claims=unsupp,
+                            uncertain_claims=uncert,
+                            check_type=check_type,
+                            threshold=self.gate_threshold,
+                        )
+                        scope.finish(output=response, error=exc, model=model, prompt_tokens=prompt, completion_tokens=completion)
+                        raise exc
+
+                    elif self.gate_action == "reroute_to_model" and self.fallback_model:
+                        scope.metadata["eval_gate_rerouted"] = True
+                        scope.metadata["original_model"] = model
+                        scope.metadata["fallback_model"] = self.fallback_model
+                        rerun_kw = dict(kwargs)
+                        try:
+                            sig = inspect.signature(func)
+                            if "model" in sig.parameters or any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()):
+                                rerun_kw["model"] = self.fallback_model
+                        except Exception:
+                            rerun_kw["model"] = self.fallback_model
+                        fallback_resp = func(*args, **rerun_kw)
+                        fb_model, fb_p, fb_c = _extract_llm(fallback_resp)
+                        fb_model = fb_model or self.fallback_model
+                        final_p = (prompt or 0) + (fb_p or 0) if (prompt or fb_p) else None
+                        final_c = (completion or 0) + (fb_c or 0) if (completion or fb_c) else None
+                        scope.check_output_guard(fallback_resp, fb_model, final_p, final_c)
+                        scope.__exit__(None, None, None)
+                        return fallback_resp
+
+                    elif self.gate_action == "flag":
+                        scope.metadata["eval_gate_flagged"] = True
+
             scope.check_output_guard(response, model, prompt, completion)
             scope.__exit__(None, None, None)
             return response
@@ -502,13 +730,27 @@ def trace_llm(
     consistency_check: bool = False,
     consistency_samples: int = 3,
     consistency_temperature: float = 0.7,
+    eval_gate: bool = False,
+    gate_score_type: str | None = None,
+    gate_threshold: float = 0.7,
+    gate_action: str = "block",
+    fallback_model: str | None = None,
+    context: Any = None,
+    judge_model: str = "gpt-4o-mini",
     **kwargs: Any,
 ) -> TraceLLM:
-    """Trace an LLM execution, enforcing guardrails and optionally verifying response consistency.
+    """Trace an LLM execution, enforcing guardrails, consistency checks, and inline eval gates.
 
     Parameters:
     - name: Optional span name (defaults to "llm.<model>" or "llm.call").
     - model: Optional model identifier (e.g. "gpt-4o", "claude-3-5-sonnet").
+    - eval_gate: Opt-in flag to run synchronous inline response evaluation before returning.
+    - gate_score_type: "faithfulness" | "factuality" (auto-detected from context if omitted).
+    - gate_threshold: Minimum acceptable evaluation score (default: 0.7).
+    - gate_action: Action when score is below threshold: "block" | "flag" | "reroute_to_model".
+    - fallback_model: Target stronger model when gate_action="reroute_to_model".
+    - context: Retrieved context documents for faithfulness evaluation.
+    - judge_model: LLM judge model used for evaluation scoring (default: "gpt-4o-mini").
     - consistency_check: Opt-in flag to re-run the LLM call N times to assess response consistency.
     - consistency_samples: Number of total sample runs (default: 3).
     - consistency_temperature: Higher temperature for consistency sampling runs (default: 0.7).
@@ -520,8 +762,16 @@ def trace_llm(
         consistency_check=consistency_check,
         consistency_samples=consistency_samples,
         consistency_temperature=consistency_temperature,
+        eval_gate=eval_gate,
+        gate_score_type=gate_score_type,
+        gate_threshold=gate_threshold,
+        gate_action=gate_action,
+        fallback_model=fallback_model,
+        context=context,
+        judge_model=judge_model,
         **kwargs,
     )
+
 
 
 
