@@ -132,6 +132,52 @@ def process_entries(redis: Redis, entries: list[tuple[str, dict[str, str]]]) -> 
 
             if all_scores:
                 engine.persist_scores(all_scores)
+
+                # Check for compliance-relevant AI quality incidents (hallucinations on regulated interactions)
+                from audit import insert_chained_audit_log
+
+                for score in all_scores:
+                    score_val = score.get("value", 1.0)
+                    if score_val < 0.70:
+                        # Locate corresponding span
+                        target_span = next(
+                            (s for s, _ in spans_and_mappings if s.get("span_id") == score.get("span_id")),
+                            None,
+                        )
+                        if target_span:
+                            has_consent = bool(target_span.get("consent_id"))
+                            has_pii = bool(target_span.get("metadata", {}).get("contains_pii")) or any(
+                                bool(m and getattr(m, "entities", None))
+                                for s, m in spans_and_mappings
+                                if s.get("span_id") == target_span.get("span_id")
+                            )
+                            is_regulated = (
+                                has_consent
+                                or has_pii
+                                or bool(target_span.get("metadata", {}).get("regulated"))
+                            )
+
+                            if is_regulated:
+                                insert_chained_audit_log(
+                                    db_url=engine.db_url,
+                                    org_id=target_span["org_id"],
+                                    actor_id=target_span.get("agent_id") or target_span.get("user_id") or "system",
+                                    action="ungrounded_regulated_response",
+                                    target_type="span",
+                                    target_id=target_span.get("span_id", ""),
+                                    details={
+                                        "description": "Ungrounded response detected on regulated interaction",
+                                        "score_type": score.get("check_type", score.get("score_type", "faithfulness")),
+                                        "score": score_val,
+                                        "unsupported_claims": score.get("unsupported_claims", []),
+                                        "uncertain_claims": score.get("uncertain_claims", []),
+                                        "action_taken": target_span.get("metadata", {}).get("eval_gate_action", "logged"),
+                                        "consent_id": target_span.get("consent_id"),
+                                        "trace_id": target_span.get("trace_id"),
+                                        "is_ai_quality_event": True,
+                                        "compliance_relevant": True,
+                                    },
+                                )
         except Exception as eval_exc:
             logger.debug("Automated eval execution warning: %s", eval_exc)
 

@@ -1,4 +1,5 @@
 import io
+import json
 from datetime import datetime, timezone
 import pytest
 from fastapi.testclient import TestClient
@@ -8,8 +9,9 @@ from app.pdf_generator import generate_audit_pdf
 
 
 @pytest.fixture
-def client():
-    # Configure in-memory mode and disabled auth for testing
+def client(monkeypatch):
+    import app.dependencies as deps
+    monkeypatch.setattr(deps, "AUTH_DISABLED", True)
     return TestClient(app)
 
 
@@ -50,7 +52,7 @@ def test_audit_export_csv(client):
             "action": "unmask",
             "api_key_hash": "dev_key_hash",
             "span_id": "span_abc",
-            "details": "{}",
+            "details": json.dumps({"score": 0.85, "score_type": "faithfulness", "action_taken": "allowed"}),
         }
     ]
     response = client.get("/v1/compliance/audit-export?format=csv")
@@ -58,9 +60,11 @@ def test_audit_export_csv(client):
     assert response.headers["content-type"].startswith("text/csv")
     assert "attachment; filename=\"audit-export-development-" in response.headers["content-disposition"]
     content = response.text
-    assert "id,org_id,created_at,action,api_key_hash,span_id,details" in content
+    assert "id,org_id,created_at,action,api_key_hash,span_id,linked_eval_score,linked_eval_type,unsupported_claims,gating_action,details" in content
     assert "unmask" in content
     assert "span_abc" in content
+    assert "0.85" in content
+    assert "faithfulness" in content
 
 
 def test_audit_export_pdf(client):
@@ -80,3 +84,4 @@ def test_audit_export_pdf(client):
     assert response.headers["content-type"] == "application/pdf"
     assert response.content.startswith(b"%PDF-1.4")
     assert b"%%EOF" in response.content
+

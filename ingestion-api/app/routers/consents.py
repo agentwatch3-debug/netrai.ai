@@ -112,6 +112,51 @@ MOCK_AUDIT_ENTRIES.append({
     "entry_hash": _canonical_audit_hash(_hash_2, "org_dev_demo", "user_security_secops", "sso.connection_enabled", "sso_connection", "okta_saml_01", {"provider": "okta", "domain": "acmewatch.com", "enforce_sso": True}),
     "created_at": "2026-08-23T08:00:00Z",
 })
+_hash_3 = MOCK_AUDIT_ENTRIES[2]["entry_hash"]
+MOCK_AUDIT_ENTRIES.append({
+    "id": 4,
+    "org_id": "org_dev_demo",
+    "actor_id": "eval_engine",
+    "actor_email": "system@agentwatch.ai",
+    "action": "ungrounded_regulated_response",
+    "target_type": "span",
+    "target_id": "span_eval_fail_8892",
+    "details": {
+        "description": "Ungrounded response detected on regulated interaction",
+        "score_type": "faithfulness",
+        "score": 0.32,
+        "threshold": 0.70,
+        "unsupported_claims": ["Patient has a history of stage 3 hypertension."],
+        "action_taken": "blocked",
+        "consent_id": "FORM_AI_TERMS_V2.1_TS88921",
+        "is_ai_quality_event": True,
+        "compliance_relevant": True,
+    },
+    "ip_address": "127.0.0.1",
+    "user_agent": "NetrAI-Worker/1.0",
+    "prev_hash": _hash_3,
+    "entry_hash": _canonical_audit_hash(
+        _hash_3,
+        "org_dev_demo",
+        "eval_engine",
+        "ungrounded_regulated_response",
+        "span",
+        "span_eval_fail_8892",
+        {
+            "description": "Ungrounded response detected on regulated interaction",
+            "score_type": "faithfulness",
+            "score": 0.32,
+            "threshold": 0.70,
+            "unsupported_claims": ["Patient has a history of stage 3 hypertension."],
+            "action_taken": "blocked",
+            "consent_id": "FORM_AI_TERMS_V2.1_TS88921",
+            "is_ai_quality_event": True,
+            "compliance_relevant": True,
+        },
+    ),
+    "created_at": "2026-08-23T09:15:00Z",
+})
+
 
 MOCK_SUBJECT_RIGHTS_REQUESTS: list[dict[str, Any]] = [
     {
@@ -367,18 +412,48 @@ async def export_audit_log(
     output = io.StringIO()
     writer = csv.DictWriter(
         output,
-        fieldnames=["id", "org_id", "created_at", "action", "api_key_hash", "span_id", "details"],
+        fieldnames=[
+            "id",
+            "org_id",
+            "created_at",
+            "action",
+            "api_key_hash",
+            "span_id",
+            "linked_eval_score",
+            "linked_eval_type",
+            "unsupported_claims",
+            "gating_action",
+            "details",
+        ],
     )
     writer.writeheader()
     for rec in records:
+        det = rec.get("details")
+        if isinstance(det, str):
+            try:
+                det = json.loads(det)
+            except Exception:
+                det = {}
+        elif not isinstance(det, dict):
+            det = {}
+
+        eval_score = det.get("score") if "score" in det else det.get("linked_eval_score")
+        eval_type = det.get("score_type") or det.get("linked_eval_type") or ""
+        unsupported = json.dumps(det.get("unsupported_claims", [])) if det.get("unsupported_claims") else ""
+        action_taken = det.get("action_taken") or det.get("gating_action") or ""
+
         writer.writerow({
             "id": rec.get("id", ""),
             "org_id": rec.get("org_id", ""),
             "created_at": rec.get("created_at", "").isoformat() if isinstance(rec.get("created_at"), datetime) else str(rec.get("created_at", "")),
             "action": rec.get("action", ""),
             "api_key_hash": rec.get("api_key_hash", ""),
-            "span_id": rec.get("span_id", "") or "",
-            "details": rec.get("details", "") or "{}",
+            "span_id": rec.get("span_id", "") or (rec.get("target_id", "") if rec.get("target_type") == "span" else ""),
+            "linked_eval_score": eval_score if eval_score is not None else "",
+            "linked_eval_type": eval_type,
+            "unsupported_claims": unsupported,
+            "gating_action": action_taken,
+            "details": json.dumps(det) if det else (rec.get("details", "") or "{}"),
         })
 
     filename = f"audit-export-{api_key.org_id}-{timestamp_str}.csv"
@@ -390,25 +465,49 @@ async def export_audit_log(
 
 
 @router.get("/v1/compliance/audit-logs")
-async def list_audit_logs(limit: int = 50, api_key: ApiKey = Depends(authenticate)) -> dict[str, Any]:
-    """Retrieve immutable, tamper-evident audit logs."""
+async def list_audit_logs(
+    limit: int = 50,
+    filter_type: str | None = None,
+    api_key: ApiKey = Depends(authenticate),
+) -> dict[str, Any]:
+    """Retrieve immutable, tamper-evident audit logs with optional AI quality compliance filter."""
     org_id = api_key.org_id
     if state.postgres is not None:
-        rows = await state.postgres.fetch(
-            """
+        query_sql = """
             SELECT id, org_id, actor_id, actor_email, action, target_type, target_id, details, ip_address, user_agent, prev_hash, entry_hash, created_at
             FROM audit_logs
             WHERE org_id = $1
-            ORDER BY id ASC
-            LIMIT $2
-            """,
-            org_id,
-            limit,
-        )
+        """
+        params: list[Any] = [org_id]
+        if filter_type == "ai_quality":
+            query_sql += " AND (action = 'ungrounded_regulated_response' OR (details->>'is_ai_quality_event')::boolean = true OR details->>'score_type' IS NOT NULL)"
+        elif filter_type == "access":
+            query_sql += " AND (action NOT IN ('ungrounded_regulated_response') AND (details->>'is_ai_quality_event' IS NULL OR (details->>'is_ai_quality_event')::boolean = false))"
+
+        query_sql += " ORDER BY id ASC LIMIT $2"
+        params.append(limit)
+
+        rows = await state.postgres.fetch(query_sql, *params)
         if rows:
             return {"data": [dict(r) for r in rows]}
 
+    if filter_type == "ai_quality":
+        return {
+            "data": [
+                r for r in MOCK_AUDIT_ENTRIES
+                if r.get("action") == "ungrounded_regulated_response" or (r.get("details") and r["details"].get("is_ai_quality_event"))
+            ]
+        }
+    elif filter_type == "access":
+        return {
+            "data": [
+                r for r in MOCK_AUDIT_ENTRIES
+                if r.get("action") != "ungrounded_regulated_response"
+            ]
+        }
+
     return {"data": MOCK_AUDIT_ENTRIES}
+
 
 
 @router.post("/v1/compliance/audit-logs")
