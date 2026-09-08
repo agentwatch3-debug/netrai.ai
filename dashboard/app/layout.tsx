@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "NetrAI", description: "AI Agent Obse
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  const content = <html lang="en" className="dark bg-slate-950 text-slate-100 antialiased"><body>{children}</body></html>;
+  const content = <html lang="en" className="bg-paper text-ink antialiased"><body>{children}</body></html>;
   if (publishableKey) {
     return <ClerkProvider publishableKey={publishableKey}>{content}</ClerkProvider>;
   }

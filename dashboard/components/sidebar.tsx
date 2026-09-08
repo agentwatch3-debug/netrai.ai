@@ -34,52 +34,52 @@ export function Sidebar() {
   const hasClerk = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
   return (
-    <aside className="flex min-h-screen w-64 shrink-0 flex-col border-r border-slate-800 bg-slate-950 p-4">
+    <aside className="flex min-h-screen w-64 shrink-0 flex-col border-r border-border bg-surface p-4 text-ink font-sans">
       {/* Brand Header */}
-      <div className="mb-8 flex items-center justify-between px-2">
-        <Link className="flex items-center gap-2 text-lg font-bold tracking-tight text-white" href="/dashboard">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-xs font-black text-white">
+      <div className="mb-6 flex items-center justify-between px-2">
+        <Link className="flex items-center gap-2 text-base font-bold tracking-tight text-ink font-display" href="/dashboard">
+          <div className="flex h-6 w-6 items-center justify-center border border-ink bg-ink text-[11px] font-bold text-paper font-mono">
             NA
           </div>
-          <span>netrai</span>
+          <span className="tracking-tight">netrai</span>
         </Link>
-        <span className="rounded border border-blue-900/60 bg-blue-950/40 px-1.5 py-0.5 text-[10px] font-semibold text-blue-400">
+        <span className="border border-border bg-paper px-1.5 py-0.5 text-[10px] font-mono font-medium text-inkDim">
           v1.0
         </span>
       </div>
 
       {/* Navigation Links */}
-      <nav className="space-y-1">
+      <nav className="space-y-0.5">
         {links.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2.5 px-2.5 py-2 text-xs font-medium transition-colors border ${
                 isActive
-                  ? "bg-slate-900 text-blue-400 border border-slate-800"
-                  : "text-slate-400 hover:bg-slate-900/60 hover:text-slate-200"
+                  ? "bg-accentSoft text-accent border-accent/20 font-semibold"
+                  : "text-inkDim border-transparent hover:bg-paper hover:text-ink"
               }`}
               href={href}
               key={href}
             >
-              <Icon size={18} className={isActive ? "text-blue-400" : "text-slate-500"} />
-              {label}
+              <Icon size={15} className={isActive ? "text-accent" : "text-inkFaint"} />
+              <span>{label}</span>
             </Link>
           );
         })}
       </nav>
 
       {/* Compliance / Status Badge */}
-      <div className="mt-6 rounded-lg border border-slate-800/80 bg-slate-900/30 p-3 text-xs text-slate-400">
-        <div className="flex items-center gap-1.5 font-medium text-slate-300">
-          <ShieldCheck size={14} className="text-emerald-400" />
+      <div className="mt-6 border border-border bg-paper p-3 text-xs text-inkDim space-y-1">
+        <div className="flex items-center gap-1.5 font-medium text-ink">
+          <ShieldCheck size={14} className="text-good" />
           <span>DPDP India Pinned</span>
         </div>
-        <p className="mt-1 text-[11px] text-slate-500">Region: ap-south-1 (Mumbai)</p>
+        <p className="text-[10.5px] text-inkFaint font-mono">Region: ap-south-1 (Mumbai)</p>
       </div>
 
       {/* Bottom Tenant / User Footer */}
-      <div className="mt-auto border-t border-slate-800/80 pt-4">
+      <div className="mt-auto border-t border-border pt-4">
         {hasClerk ? (
           <div className="space-y-3">
             <OrganizationSwitcher hidePersonal appearance={{ elements: { rootBox: "w-full" } }} />
@@ -87,18 +87,18 @@ export function Sidebar() {
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 rounded-md bg-slate-900 p-2 text-xs">
-              <Building2 size={15} className="text-blue-400" />
+            <div className="flex items-center gap-2 border border-border bg-paper p-2 text-xs">
+              <Building2 size={15} className="text-accent" />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-slate-200">Acme Agents Corp</p>
-                <p className="text-[10px] text-slate-400">org_dev_demo</p>
+                <p className="truncate font-medium text-ink">Acme Agents Corp</p>
+                <p className="text-[10px] font-mono text-inkFaint">org_dev_demo</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 px-1 text-xs text-slate-400">
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-800">
-                <User size={12} className="text-slate-300" />
+            <div className="flex items-center gap-2 px-1 text-xs text-inkDim font-mono">
+              <div className="flex h-4 w-4 items-center justify-center border border-border bg-surface text-inkDim">
+                <User size={10} />
               </div>
-              <span className="truncate">dev-admin@netrai.local</span>
+              <span className="truncate text-[11px]">dev-admin@netrai.local</span>
             </div>
           </div>
         )}

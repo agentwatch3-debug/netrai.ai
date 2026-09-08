@@ -1365,6 +1365,8 @@ const LEAN_SCHEMA = \`type SymptomReport = { id: string; symptoms: string[]; sev
         updated_at: "2026-08-23T08:00:00Z",
       },
     };
+  }
+
   if (path.startsWith("/v1/compliance/verify-audit-log")) {
     return {
       is_valid: true,
@@ -1509,6 +1511,8 @@ const LEAN_SCHEMA = \`type SymptomReport = { id: string; symptoms: string[]; sev
       },
     };
   }
+
+  if (path.includes("/unmask")) {
     return {
       replacements: {
         "<EMAIL_ADDRESS_1>": "rahul.sharma@example.in",
@@ -1518,4 +1522,5 @@ const LEAN_SCHEMA = \`type SymptomReport = { id: string; symptoms: string[]; sev
   }
 
   return { status: "ok" };
+}
 }

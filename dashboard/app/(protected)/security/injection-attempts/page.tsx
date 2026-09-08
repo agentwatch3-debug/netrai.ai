@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowUpRight, CheckCircle2, Filter, Lock, Radio, Search, ShieldAlert, ShieldCheck, Sliders, Zap } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { AlertTriangle, ArrowUpRight, Search, ShieldAlert, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatRow } from "@/components/ui/stat-row";
 
 interface InjectionAttempt {
   id: number;
@@ -84,7 +84,7 @@ export default function InjectionAttemptsPage() {
         setConfig((prev) => ({ ...prev, injection_threshold: newThreshold }));
       }
     } catch {
-      // Ignored in preview
+      // Ignored
     }
   }
 
@@ -99,184 +99,194 @@ export default function InjectionAttemptsPage() {
   const highRiskCount = attempts.filter((a) => a.risk_score >= 0.85).length;
   const uniqueAgents = Array.from(new Set(attempts.map((a) => a.agent_id))).filter(Boolean);
 
-  if (loading) {
-    return <div className="text-sm text-slate-400">Loading prompt security telemetry...</div>;
-  }
+  const statItems = [
+    {
+      label: "Interception Policy",
+      value: config.injection_policy_mode === "block" ? "Inline Block (403)" : "Alert & Monitor",
+      subtext: `Sensitivity threshold: ${(config.injection_threshold * 100).toFixed(0)}%`,
+      badge: (
+        <Badge variant={config.injection_policy_mode === "block" ? "good" : "warn"}>
+          {config.injection_policy_mode.toUpperCase()}
+        </Badge>
+      ),
+    },
+    {
+      label: "Total Blocked Threats",
+      value: totalBlocked.toString(),
+      subtext: "Malicious payloads prevented",
+      valueClassName: "text-bad",
+    },
+    {
+      label: "High-Risk Attacks (>=0.85)",
+      value: highRiskCount.toString(),
+      subtext: "Instruction override / jailbreaks",
+      valueClassName: highRiskCount > 0 ? "text-bad" : "text-good",
+    },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="text-xl font-semibold text-white">Prompt Injection Shield & Security Incidents</h1>
-          <p className="text-sm text-slate-400">
-            Real-time pre-execution prompt injection defense, jailbreak prevention, and incident audit log.
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
+            Prompt Security & Injection Shield
+          </h1>
+          <p className="text-xs text-inkDim mt-1">
+            Real-time heuristic & Presidio pattern detection intercepting prompt injections, jailbreaks, and system prompt leaks.
           </p>
         </div>
+
+        {/* Policy Toggle Controls */}
+        <div className="flex items-center gap-2 border border-border bg-surface p-1 text-xs">
+          <button
+            onClick={() => void handleTogglePolicy("block")}
+            disabled={updatingPolicy}
+            className={`px-3 py-1 text-xs font-mono font-medium transition-colors ${
+              config.injection_policy_mode === "block"
+                ? "bg-ink text-paper"
+                : "text-inkDim hover:text-ink"
+            }`}
+          >
+            Block Mode
+          </button>
+          <button
+            onClick={() => void handleTogglePolicy("alert")}
+            disabled={updatingPolicy}
+            className={`px-3 py-1 text-xs font-mono font-medium transition-colors ${
+              config.injection_policy_mode === "alert"
+                ? "bg-ink text-paper"
+                : "text-inkDim hover:text-ink"
+            }`}
+          >
+            Alert Mode
+          </button>
+        </div>
       </div>
 
-      {/* Security Shield Hero Metrics */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="border-slate-800 bg-slate-900/40 p-5 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 uppercase font-semibold">Active Protection Policy</span>
-            <ShieldAlert size={16} className={config.injection_policy_mode === "block" ? "text-red-400" : "text-amber-400"} />
-          </div>
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-base font-bold text-white font-mono">
-              {config.injection_policy_mode === "block" ? "Strict (Block & Protect)" : "Audit & Alert Only"}
-            </span>
-            <Badge className={config.injection_policy_mode === "block" ? "bg-red-950 text-red-300 border-red-800" : "bg-amber-950 text-amber-300 border-amber-800"}>
-              {config.injection_policy_mode.toUpperCase()}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-2 pt-2">
-            <Button
-              onClick={() => void handleTogglePolicy(config.injection_policy_mode === "block" ? "alert" : "block")}
-              disabled={updatingPolicy}
-              className="h-7 text-xs bg-slate-800 hover:bg-slate-700 w-full"
-            >
-              Switch to {config.injection_policy_mode === "block" ? "Alert Mode" : "Block Mode"}
-            </Button>
-          </div>
-        </Card>
-
-        <Card className="border-slate-800 bg-slate-900/40 p-5 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 uppercase font-semibold">Total Attacks Blocked</span>
-            <Lock size={16} className="text-emerald-400" />
-          </div>
-          <p className="text-2xl font-bold text-emerald-400 font-mono pt-1">{totalBlocked}</p>
-          <p className="text-[11px] text-slate-500">Prevented from executing against LLM models</p>
-        </Card>
-
-        <Card className="border-slate-800 bg-slate-900/40 p-5 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 uppercase font-semibold">High-Risk Interceptions (&ge;0.85)</span>
-            <AlertTriangle size={16} className="text-red-400" />
-          </div>
-          <p className="text-2xl font-bold text-red-400 font-mono pt-1">{highRiskCount}</p>
-          <p className="text-[11px] text-slate-500">Jailbreak / instruction-override attempts</p>
-        </Card>
-      </div>
+      {/* Single Bordered Flex Container with Internal Dividers (.stat-row) */}
+      <StatRow items={statItems} />
 
       {/* Filter and Sensitivity Toolbar */}
-      <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search Input */}
-            <div className="relative w-64">
-              <Search size={14} className="absolute left-3 top-2.5 text-slate-500" />
-              <input
-                className="w-full h-8 rounded border border-slate-800 bg-slate-950 pl-8 pr-3 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
-                placeholder="Search prompt payload..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-
-            {/* Agent Selector */}
-            <select
-              className="h-8 rounded border border-slate-800 bg-slate-950 px-3 text-xs text-white focus:border-blue-500 focus:outline-none"
-              value={selectedAgent}
-              onChange={(e) => setSelectedAgent(e.target.value)}
-            >
-              <option value="all">All Agents</option>
-              {uniqueAgents.map((agent) => (
-                <option key={agent} value={agent}>{agent}</option>
-              ))}
-            </select>
-
-            {/* Min Score Selector */}
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
-              <span>Min Score:</span>
-              <select
-                className="h-8 rounded border border-slate-800 bg-slate-950 px-2 text-xs text-white focus:border-blue-500 focus:outline-none"
-                value={minScore}
-                onChange={(e) => setMinScore(parseFloat(e.target.value))}
-              >
-                <option value={0.5}>&ge; 0.50 (All Flagged)</option>
-                <option value={0.7}>&ge; 0.70 (Standard Threshold)</option>
-                <option value={0.85}>&ge; 0.85 (High Risk)</option>
-                <option value={0.95}>&ge; 0.95 (Critical)</option>
-              </select>
-            </div>
+      <div className="flex flex-wrap items-center justify-between gap-4 border border-border bg-surface p-3 text-xs">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative w-64">
+            <Search size={13} className="absolute left-2.5 top-2.5 text-inkFaint" />
+            <input
+              className="w-full h-8 border border-border bg-paper pl-8 pr-3 text-xs text-ink placeholder-inkFaint focus:border-borderStrong focus:outline-none"
+              placeholder="Search prompt payload..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-            <span>Detection Threshold:</span>
-            <input
-              type="range"
-              min="0.4"
-              max="0.95"
-              step="0.05"
-              value={config.injection_threshold}
-              onChange={(e) => void handleUpdateThreshold(parseFloat(e.target.value))}
-              className="accent-blue-500 w-24 cursor-pointer"
-            />
-            <strong className="text-white font-bold">{config.injection_threshold.toFixed(2)}</strong>
+          <select
+            className="h-8 border border-border bg-paper px-3 text-xs text-ink focus:border-borderStrong focus:outline-none"
+            value={selectedAgent}
+            onChange={(e) => setSelectedAgent(e.target.value)}
+          >
+            <option value="all">All Agents</option>
+            {uniqueAgents.map((agent) => (
+              <option key={agent} value={agent}>{agent}</option>
+            ))}
+          </select>
+
+          <div className="flex items-center gap-1.5 text-xs text-inkDim font-mono">
+            <span>Min Score:</span>
+            <select
+              className="h-8 border border-border bg-paper px-2 text-xs text-ink focus:border-borderStrong focus:outline-none"
+              value={minScore}
+              onChange={(e) => setMinScore(parseFloat(e.target.value))}
+            >
+              <option value={0.5}>&ge; 0.50 (All Flagged)</option>
+              <option value={0.7}>&ge; 0.70 (Standard Threshold)</option>
+              <option value={0.85}>&ge; 0.85 (High Risk)</option>
+              <option value={0.95}>&ge; 0.95 (Critical)</option>
+            </select>
           </div>
         </div>
-      </Card>
 
-      {/* Incident Log Cards */}
-      <div className="space-y-4">
-        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-          Detected Prompt Injection Incidents ({filtered.length})
-        </span>
+        <div className="flex items-center gap-2 text-xs text-inkDim font-mono">
+          <span>Threshold:</span>
+          <input
+            type="range"
+            min="0.4"
+            max="0.95"
+            step="0.05"
+            value={config.injection_threshold}
+            onChange={(e) => void handleUpdateThreshold(parseFloat(e.target.value))}
+            className="w-24 cursor-pointer accent-accent"
+          />
+          <strong className="text-ink font-bold">{config.injection_threshold.toFixed(2)}</strong>
+        </div>
+      </div>
+
+      {/* Incident Log Rows with subtle inset accent (shadow-[inset_2px_0_0_color] on first cell) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between border-b border-border pb-2">
+          <span className="text-[10.5px] font-medium uppercase tracking-wide text-inkFaint font-sans">
+            Detected Prompt Injection Incidents ({filtered.length})
+          </span>
+        </div>
 
         {filtered.length > 0 ? (
-          <div className="space-y-3">
+          <div className="divide-y divide-border border border-border bg-surface">
             {filtered.map((item) => {
               const isBlocked = item.action_taken === "blocked";
+              const isHigh = item.risk_score >= 0.85;
+              const insetColor = isHigh || isBlocked ? "#8C3A32" : "#8A6A2C";
 
               return (
-                <Card key={item.id} className="border-slate-800 bg-slate-900/30 p-4 space-y-3 hover:border-slate-700 transition-all">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/60 pb-2">
-                    <div className="flex items-center gap-2">
-                      <Badge className={isBlocked ? "bg-red-950 text-red-300 border-red-800 font-mono text-[10px]" : "bg-amber-950 text-amber-300 border-amber-800 font-mono text-[10px]"}>
-                        {isBlocked ? "BLOCKED (403)" : "FLAGGED & MONITORED"}
+                <div
+                  key={item.id}
+                  className="p-4 space-y-2.5 transition-colors hover:bg-paper/60"
+                  style={{
+                    boxShadow: `inset 2px 0 0 ${insetColor}`,
+                  }}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <Badge variant={isBlocked ? "bad" : "warn"}>
+                        {isBlocked ? "BLOCKED" : "FLAGGED"}
                       </Badge>
-                      <span className="font-mono text-xs text-slate-300">
-                        Agent: <strong className="text-white">{item.agent_id}</strong>
+                      <span className="font-mono text-xs text-ink">
+                        agent: <strong className="text-accent">{item.agent_id}</strong>
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-3 font-mono text-xs">
-                      <div className="flex items-center gap-1">
-                        <span className="text-slate-500 text-[10px] uppercase">Risk Score:</span>
-                        <span className={`font-bold ${item.risk_score >= 0.85 ? "text-red-400" : "text-amber-400"}`}>
-                          {(item.risk_score * 100).toFixed(0)}%
-                        </span>
+                    <div className="flex items-center gap-3 font-mono text-xs text-inkDim">
+                      <div>
+                        risk: <strong className={isHigh ? "text-bad font-bold" : "text-warn"}>{(item.risk_score * 100).toFixed(0)}%</strong>
                       </div>
-                      <span>·</span>
-                      <span className="text-[11px] text-slate-500">{new Date(item.created_at).toLocaleString()}</span>
+                      <span>•</span>
+                      <span className="text-[11px]">{new Date(item.created_at).toLocaleString()}</span>
                       {item.trace_id && (
-                        <Link href={`/traces/${item.trace_id}`} className="text-blue-400 hover:underline flex items-center gap-0.5 text-[10px]">
-                          Waterfall <ArrowUpRight size={11} />
+                        <Link href={`/traces/${item.trace_id}`} className="text-accent hover:underline flex items-center gap-0.5 text-xs">
+                          Trace <ArrowUpRight size={11} />
                         </Link>
                       )}
                     </div>
                   </div>
 
-                  {/* Flag Badges */}
+                  {/* Flag Tags */}
                   <div className="flex flex-wrap items-center gap-1.5">
                     {item.flags.map((flag) => (
-                      <span key={flag} className="rounded bg-slate-950 border border-slate-800 px-2 py-0.5 font-mono text-[10px] text-red-300">
-                        🚩 {flag}
+                      <span key={flag} className="border border-border bg-paper px-1.5 py-0.5 font-mono text-[10px] text-bad">
+                        {flag}
                       </span>
                     ))}
                   </div>
 
-                  {/* Flagged Payload Snippet */}
-                  <div className="rounded-lg border border-slate-800 bg-slate-950 p-3 font-mono text-xs text-slate-200">
-                    <p className="line-clamp-3">{item.user_input}</p>
+                  {/* Flagged Payload Box */}
+                  <div className="border border-border bg-paper p-2.5 font-mono text-xs text-ink">
+                    <p className="line-clamp-2">{item.user_input}</p>
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
         ) : (
-          <div className="rounded-xl border border-slate-800 bg-slate-900/20 p-12 text-center text-slate-400 text-sm">
+          <div className="border border-border bg-surface p-8 text-center text-xs text-inkDim">
             No injection attempts match the selected filter criteria.
           </div>
         )}

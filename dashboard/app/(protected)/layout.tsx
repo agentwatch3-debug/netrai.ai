@@ -11,7 +11,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100">
+    <div className="flex min-h-screen bg-paper text-ink font-sans">
       <Sidebar />
       <main className="min-w-0 flex-1 p-6 md:p-8 overflow-y-auto">{children}</main>
     </div>

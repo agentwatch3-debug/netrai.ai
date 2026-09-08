@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Lock, Sparkles, Target, ThumbsDown, ThumbsUp, Unlock, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { MaskedPiiChip } from "@/components/ui/masked-pii-chip";
 import { EvalScore, Span } from "@/lib/types";
 
 export function TraceWaterfall({ traceId }: { traceId: string }) {
@@ -47,13 +48,12 @@ export function TraceWaterfall({ traceId }: { traceId: string }) {
         evaluator_type: "human",
       }),
     });
-    // Refresh scores
     const res = await fetch(`/api/evals/scores?trace_id=${traceId}`);
     if (res.ok) setScores(await res.json());
   }
 
   if (loading) {
-    return <div className="text-sm text-slate-400">Loading trace spans & quality scorecards...</div>;
+    return <div className="text-xs text-inkDim font-mono p-4 border border-border bg-surface">Loading trace spans & quality scorecards...</div>;
   }
 
   const levels = new Map<string, number>();
@@ -70,168 +70,137 @@ export function TraceWaterfall({ traceId }: { traceId: string }) {
 
         return (
           <details
-            className="group rounded-lg border border-slate-800 bg-slate-900/50 transition-all hover:border-slate-700"
+            className="group border border-border bg-surface transition-colors"
             key={span.span_id}
-            style={{ marginLeft: level * 20 }}
+            style={{ marginLeft: level * 16 }}
             open={level === 0}
           >
-            <summary className="flex cursor-pointer items-center gap-3 p-3.5 text-sm select-none">
-              <Badge
-                className={
-                  span.status === "error"
-                    ? "bg-red-950 text-red-300 border-red-900/60"
-                    : span.span_type === "llm_call"
-                    ? "bg-purple-950 text-purple-300 border-purple-900/60"
-                    : span.span_type === "tool_call"
-                    ? "bg-blue-950 text-blue-300 border-blue-900/60"
-                    : "bg-slate-800 text-slate-300"
-                }
-              >
-                {span.span_type}
-              </Badge>
-
-              <span className="font-semibold text-slate-200">{span.name}</span>
-              {span.model && <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400 font-mono">{span.model}</span>}
-
-              {/* Eval Badges */}
-              <div className="flex items-center gap-1.5 ml-2">
-                {spanScores.map((s) => {
-                  const sName = (s.score_name || "").toLowerCase();
-                  if (sName === "task_adherence") {
-                    if (s.score_value < 0.7) {
-                      return (
-                        <span
-                          key={s.id || s.score_name}
-                          className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-semibold bg-red-950 text-red-300 border border-red-800 shadow-sm"
-                          title={s.reasoning || "Possible intent mismatch between user request and agent action"}
-                        >
-                          <AlertTriangle size={11} className="text-red-400" />
-                          Possible intent mismatch ({(s.score_value * 100).toFixed(0)}%)
-                        </span>
-                      );
-                    }
-                    return (
-                      <span
-                        key={s.id || s.score_name}
-                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-blue-950 text-blue-300 border border-blue-900/50"
-                        title={s.reasoning || "Action aligns with user intent"}
-                      >
-                        <Target size={10} className="text-blue-400" />
-                        Task Adherence: {(s.score_value * 100).toFixed(0)}%
-                      </span>
-                    );
+            <summary className="flex cursor-pointer items-center justify-between p-3 text-xs select-none hover:bg-paper/80 border-b border-transparent group-open:border-border">
+              <div className="flex items-center gap-3">
+                <Badge
+                  variant={
+                    span.status === "error"
+                      ? "bad"
+                      : span.span_type === "llm_call"
+                      ? "accent"
+                      : span.span_type === "tool_call"
+                      ? "warn"
+                      : "neutral"
                   }
+                >
+                  {span.span_type}
+                </Badge>
 
-                  if (sName === "faithfulness" || sName === "hallucination") {
-                    if (s.score_value < 0.7) {
-                      return (
-                        <span
-                          key={s.id || s.score_name}
-                          className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-semibold bg-amber-950 text-amber-300 border border-amber-800 shadow-sm"
-                          title={s.reasoning || "Hallucinated or ungrounded claims detected"}
-                        >
-                          <AlertTriangle size={11} className="text-amber-400" />
-                          Ungrounded / Hallucination ({(s.score_value * 100).toFixed(0)}%)
-                        </span>
-                      );
-                    }
+                <span className="font-semibold text-ink font-mono">{span.name}</span>
+                {span.model && (
+                  <span className="border border-border bg-paper px-1.5 py-0.5 text-[10px] text-inkDim font-mono">
+                    {span.model}
+                  </span>
+                )}
+
+                {/* Score Indicators */}
+                <div className="flex items-center gap-2 ml-2 font-mono text-[10.5px]">
+                  {spanScores.map((s) => {
+                    const sName = (s.score_name || "").toLowerCase();
+                    const isLow = s.score_value < 0.7;
                     return (
-                      <span
+                      <Badge
                         key={s.id || s.score_name}
-                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-900/50"
-                        title={s.reasoning || undefined}
+                        variant={isLow ? "bad" : "good"}
                       >
-                        <Sparkles size={10} />
-                        Faithfulness: {(s.score_value * 100).toFixed(0)}%
-                      </span>
+                        {s.score_name}: {(s.score_value * 100).toFixed(0)}%
+                      </Badge>
                     );
-                  }
-
-                  return (
-                    <span
-                      key={s.id || s.score_name}
-                      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-                        s.score_value >= 0.7
-                          ? "bg-emerald-950 text-emerald-300 border border-emerald-900/50"
-                          : "bg-amber-950 text-amber-300 border border-amber-900/50"
-                      }`}
-                      title={s.reasoning || undefined}
-                    >
-                      <Sparkles size={10} />
-                      {s.score_name}: {(s.score_value * 100).toFixed(0)}%
-                    </span>
-                  );
-                })}
+                  })}
+                </div>
               </div>
 
-
-              <div className="ml-auto flex items-center gap-3 text-xs text-slate-400 font-mono">
-                <span>{span.latency_ms ?? 0} ms</span>
-                <span>·</span>
-                <span>${(span.cost_usd ?? 0).toFixed(4)}</span>
+              <div className="flex items-center gap-4 text-[11px] font-mono text-inkDim">
+                {span.prompt_tokens != null && (
+                  <span>
+                    tokens: <strong className="text-ink">{(span.prompt_tokens || 0) + (span.completion_tokens || 0)}</strong>
+                  </span>
+                )}
+                {span.cost_usd != null && (
+                  <span>
+                    cost: <strong className="text-ink">${Number(span.cost_usd).toFixed(4)}</strong>
+                  </span>
+                )}
               </div>
             </summary>
 
-            <div className="border-t border-slate-800/80 p-4 space-y-4 text-xs">
-              {/* Payloads */}
-              <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-3 p-4 bg-paper/30 text-xs">
+              {/* Payload grids */}
+              <div className="grid gap-3 lg:grid-cols-2">
                 <div className="space-y-1.5">
-                  <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Input Payload</span>
-                  <pre className="max-h-60 overflow-auto rounded-lg border border-slate-800 bg-slate-950 p-3 font-mono text-[11px] text-slate-300">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10.5px] uppercase tracking-wide text-inkFaint font-medium font-sans">
+                      Input Payload
+                    </span>
+                    {(span as any).masked_entities && (span as any).masked_entities.length > 0 && (
+                      <div className="flex items-center gap-1">
+                        {((span as any).masked_entities as string[]).map((m: string, idx: number) => (
+                          <MaskedPiiChip key={idx} label={m} entityType="PII Entity" />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <pre className="max-h-60 overflow-auto border border-border bg-surface p-3 font-mono text-[11px] text-ink">
                     {JSON.stringify(span.input, null, 2)}
                   </pre>
                 </div>
+
                 <div className="space-y-1.5">
-                  <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Output Payload</span>
-                  <pre className="max-h-60 overflow-auto rounded-lg border border-slate-800 bg-slate-950 p-3 font-mono text-[11px] text-slate-300">
+                  <span className="text-[10.5px] uppercase tracking-wide text-inkFaint font-medium font-sans">
+                    Output Payload
+                  </span>
+                  <pre className="max-h-60 overflow-auto border border-border bg-surface p-3 font-mono text-[11px] text-ink">
                     {JSON.stringify(span.output, null, 2)}
                   </pre>
                 </div>
               </div>
 
-              {/* Actions & Eval Card Row */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/60">
-                {/* PII Unmasking */}
+              {/* Actions & Feedback */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border">
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => void unmask(span.span_id)}
-                    className="flex items-center gap-1.5 bg-slate-800 text-xs text-slate-200 hover:bg-slate-700 h-8 px-3"
+                    className="flex items-center gap-1.5 text-xs h-7 px-2.5 border border-border bg-surface hover:bg-paper"
                   >
-                    <Lock size={12} className="text-amber-400" />
+                    <Lock size={11} className="text-warn" />
                     Unmask PII (Audit Logged)
                   </Button>
                 </div>
 
-                {/* Human Feedback Scoring */}
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-400 text-xs">Rate Span:</span>
+                  <span className="text-inkDim text-xs font-sans">Rate Span:</span>
                   <Button
                     onClick={() => void submitHumanFeedback(span.span_id, 1.0)}
-                    className={`h-8 px-2.5 text-xs flex items-center gap-1 ${
-                      currentVote === 1.0 ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    className={`h-7 px-2 text-xs flex items-center gap-1 border ${
+                      currentVote === 1.0 ? "border-good bg-good text-white" : "border-border bg-surface text-ink hover:bg-paper"
                     }`}
                   >
-                    <ThumbsUp size={12} /> Good
+                    <ThumbsUp size={11} /> Good
                   </Button>
                   <Button
                     onClick={() => void submitHumanFeedback(span.span_id, 0.0)}
-                    className={`h-8 px-2.5 text-xs flex items-center gap-1 ${
-                      currentVote === 0.0 ? "bg-red-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                    className={`h-7 px-2 text-xs flex items-center gap-1 border ${
+                      currentVote === 0.0 ? "border-bad bg-bad text-white" : "border-border bg-surface text-ink hover:bg-paper"
                     }`}
                   >
-                    <ThumbsDown size={12} /> Bad
+                    <ThumbsDown size={11} /> Bad
                   </Button>
                 </div>
               </div>
 
               {/* Decrypted PII View */}
               {spanUnmask && Object.keys(spanUnmask).length > 0 && (
-                <div className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-3 space-y-1">
-                  <div className="flex items-center gap-1.5 text-amber-400 font-semibold">
-                    <Unlock size={13} />
+                <div className="border border-warn/40 bg-accentSoft p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-accent font-semibold font-mono text-xs">
+                    <Unlock size={12} />
                     <span>Decrypted PII Tokens (Audited)</span>
                   </div>
-                  <pre className="overflow-auto font-mono text-[11px] text-amber-200">
+                  <pre className="overflow-auto font-mono text-[11px] text-ink bg-surface border border-border p-2">
                     {JSON.stringify(spanUnmask, null, 2)}
                   </pre>
                 </div>
