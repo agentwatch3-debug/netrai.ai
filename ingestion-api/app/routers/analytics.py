@@ -20,6 +20,7 @@ MOCK_AGENT_COST_BREAKDOWNS: list[dict[str, Any]] = [
         "original_llm_cost": 14.20,
         "eval_judge_cost": 8.50,
         "consistency_check_cost": 9.40,
+        "misunderstanding_cost": 6.80,
         "total_sessions": 320,
         "successful_outcomes": 298,
     },
@@ -30,6 +31,7 @@ MOCK_AGENT_COST_BREAKDOWNS: list[dict[str, Any]] = [
         "original_llm_cost": 42.80,
         "eval_judge_cost": 6.20,
         "consistency_check_cost": 0.0,
+        "misunderstanding_cost": 11.40,
         "total_sessions": 1450,
         "successful_outcomes": 1290,
     },
@@ -40,6 +42,7 @@ MOCK_AGENT_COST_BREAKDOWNS: list[dict[str, Any]] = [
         "original_llm_cost": 28.50,
         "eval_judge_cost": 18.20,
         "consistency_check_cost": 4.10,
+        "misunderstanding_cost": 3.20,
         "total_sessions": 210,
         "successful_outcomes": 182,
     },
@@ -50,6 +53,7 @@ MOCK_AGENT_COST_BREAKDOWNS: list[dict[str, Any]] = [
         "original_llm_cost": 19.40,
         "eval_judge_cost": 3.10,
         "consistency_check_cost": 0.0,
+        "misunderstanding_cost": 1.50,
         "total_sessions": 480,
         "successful_outcomes": 445,
     },
@@ -60,6 +64,7 @@ MOCK_AGENT_COST_BREAKDOWNS: list[dict[str, Any]] = [
         "original_llm_cost": 11.30,
         "eval_judge_cost": 9.80,
         "consistency_check_cost": 7.60,
+        "misunderstanding_cost": 2.10,
         "total_sessions": 180,
         "successful_outcomes": 165,
     },
@@ -70,8 +75,73 @@ MOCK_AGENT_COST_BREAKDOWNS: list[dict[str, Any]] = [
         "original_llm_cost": 16.50,
         "eval_judge_cost": 2.20,
         "consistency_check_cost": 0.0,
+        "misunderstanding_cost": 4.80,
         "total_sessions": 390,
         "successful_outcomes": 320,
+    },
+]
+
+
+MOCK_MONTHLY_RETRY_LOOP_TRENDS: list[dict[str, Any]] = [
+    {
+        "month": "Apr 2026",
+        "month_key": "2026-04",
+        "wasted_cost": 218.40,
+        "loop_count": 84,
+        "total_tokens_wasted": 412000,
+        "top_agent": "customer_support_bot",
+        "top_agent_wasted_cost": 112.50,
+        "savings_with_clarification": 152.80,
+    },
+    {
+        "month": "May 2026",
+        "month_key": "2026-05",
+        "wasted_cost": 194.20,
+        "loop_count": 72,
+        "total_tokens_wasted": 365000,
+        "top_agent": "refund_approval_agent",
+        "top_agent_wasted_cost": 98.40,
+        "savings_with_clarification": 135.90,
+    },
+    {
+        "month": "Jun 2026",
+        "month_key": "2026-06",
+        "wasted_cost": 165.80,
+        "loop_count": 61,
+        "total_tokens_wasted": 310000,
+        "top_agent": "customer_support_bot",
+        "top_agent_wasted_cost": 78.20,
+        "savings_with_clarification": 116.00,
+    },
+    {
+        "month": "Jul 2026",
+        "month_key": "2026-07",
+        "wasted_cost": 128.50,
+        "loop_count": 48,
+        "total_tokens_wasted": 242000,
+        "top_agent": "sql_analyst",
+        "top_agent_wasted_cost": 54.10,
+        "savings_with_clarification": 90.00,
+    },
+    {
+        "month": "Aug 2026",
+        "month_key": "2026-08",
+        "wasted_cost": 89.30,
+        "loop_count": 34,
+        "total_tokens_wasted": 168000,
+        "top_agent": "refund_approval_agent",
+        "top_agent_wasted_cost": 41.50,
+        "savings_with_clarification": 62.50,
+    },
+    {
+        "month": "Sep 2026 (MTD)",
+        "month_key": "2026-09",
+        "wasted_cost": 29.80,
+        "loop_count": 12,
+        "total_tokens_wasted": 56000,
+        "top_agent": "customer_support_bot",
+        "top_agent_wasted_cost": 14.80,
+        "savings_with_clarification": 21.00,
     },
 ]
 
@@ -83,10 +153,12 @@ def _build_agent_breakdown(
     llm_cost = float(agent_raw.get("original_llm_cost", 0.0))
     eval_cost = float(agent_raw.get("eval_judge_cost", 0.0))
     consistency_cost = float(agent_raw.get("consistency_check_cost", 0.0))
-    total_cost = round(llm_cost + eval_cost + consistency_cost, 4)
+    misunderstanding_cost = float(agent_raw.get("misunderstanding_cost", 0.0))
+    total_cost = round(llm_cost + eval_cost + consistency_cost + misunderstanding_cost, 4)
 
     overhead_cost = eval_cost + consistency_cost
     overhead_pct = round((overhead_cost / max(0.0001, total_cost)) * 100, 1)
+    misunderstanding_pct = round((misunderstanding_cost / max(0.0001, total_cost)) * 100, 1)
     is_tuning_candidate = overhead_pct > threshold_pct
 
     sessions = int(agent_raw.get("total_sessions", 0))
@@ -116,6 +188,8 @@ def _build_agent_breakdown(
         "original_llm_cost": round(llm_cost, 4),
         "eval_judge_cost": round(eval_cost, 4),
         "consistency_check_cost": round(consistency_cost, 4),
+        "misunderstanding_cost": round(misunderstanding_cost, 4),
+        "misunderstanding_pct": misunderstanding_pct,
         "total_cost": total_cost,
         "eval_overhead_cost": round(overhead_cost, 4),
         "eval_overhead_pct": overhead_pct,
@@ -126,6 +200,7 @@ def _build_agent_breakdown(
         "success_rate_pct": success_rate,
         "cost_per_successful_outcome": cost_per_success,
     }
+
 
 
 @router.get("/v1/analytics/cost-breakdown")
@@ -174,6 +249,8 @@ async def get_cost_breakdown(
 
             # 2. Judge evaluation costs from Postgres scores table if available
             eval_cost_map: dict[str, float] = {}
+            # 3. Misunderstanding loop wasted costs from session_quality table
+            misunderstanding_cost_map: dict[str, float] = {}
             if state.postgres is not None:
                 try:
                     score_rows = await state.postgres.fetch(
@@ -191,6 +268,18 @@ async def get_cost_breakdown(
                     )
                     for sr in score_rows:
                         eval_cost_map[sr["agent_id"]] = float(sr["eval_cost"] or 0.0)
+
+                    loop_rows = await state.postgres.fetch(
+                        """
+                        SELECT agent_id, SUM(total_cost_in_loop) as wasted_loop_cost
+                        FROM session_quality
+                        WHERE org_id = $1
+                        GROUP BY agent_id
+                        """,
+                        api_key.org_id,
+                    )
+                    for lr in loop_rows:
+                        misunderstanding_cost_map[lr["agent_id"]] = float(lr["wasted_loop_cost"] or 0.0)
                 except Exception:
                     pass
 
@@ -205,6 +294,7 @@ async def get_cost_breakdown(
                     consistency_cost = consistency_span_cost * 0.66 if consistency_span_cost > 0 else 0.0
                     original_llm = max(0.0, total_span_cost - consistency_cost)
                     eval_judge = eval_cost_map.get(aid, 0.0)
+                    misunderstanding = misunderstanding_cost_map.get(aid, 0.0)
 
                     agents_data.append(_build_agent_breakdown({
                         "agent_id": aid,
@@ -213,6 +303,7 @@ async def get_cost_breakdown(
                         "original_llm_cost": original_llm,
                         "eval_judge_cost": eval_judge,
                         "consistency_check_cost": consistency_cost,
+                        "misunderstanding_cost": misunderstanding,
                         "total_sessions": int(r[3]),
                         "successful_outcomes": int(r[4]),
                     }, overhead_threshold_pct))
@@ -231,14 +322,22 @@ async def get_cost_breakdown(
     total_llm = round(sum(a["original_llm_cost"] for a in agents_data), 4)
     total_eval = round(sum(a["eval_judge_cost"] for a in agents_data), 4)
     total_consistency = round(sum(a["consistency_check_cost"] for a in agents_data), 4)
+    total_misunderstanding = round(sum(a["misunderstanding_cost"] for a in agents_data), 4)
     total_overhead = round(total_eval + total_consistency, 4)
     avg_overhead_pct = round((total_overhead / max(0.0001, total_cost)) * 100, 1)
+    avg_misunderstanding_pct = round((total_misunderstanding / max(0.0001, total_cost)) * 100, 1)
 
     total_sessions = sum(a["total_sessions"] for a in agents_data)
     total_successful = sum(a["successful_outcomes"] for a in agents_data)
     org_success_rate = round((total_successful / max(1, total_sessions)) * 100, 1)
     org_cost_per_success = round(total_cost / max(1, total_successful), 4)
     tuning_candidates = [a for a in agents_data if a["is_tuning_candidate"]]
+
+    # Retry loop trends & summary
+    monthly_trends = MOCK_MONTHLY_RETRY_LOOP_TRENDS
+    total_loops_count = sum(t["loop_count"] for t in monthly_trends)
+    historical_wasted_cost = round(sum(t["wasted_cost"] for t in monthly_trends), 2)
+    potential_savings = round(sum(t.get("savings_with_clarification", 0.0) for t in monthly_trends), 2)
 
     return {
         "time_window": time_window,
@@ -248,6 +347,9 @@ async def get_cost_breakdown(
             "total_original_llm_cost": total_llm,
             "total_eval_judge_cost": total_eval,
             "total_consistency_check_cost": total_consistency,
+            "total_misunderstanding_cost": total_misunderstanding,
+            "total_misunderstanding_pct": avg_misunderstanding_pct,
+            "total_wasted_spend": total_misunderstanding,
             "total_eval_overhead_cost": total_overhead,
             "avg_eval_overhead_pct": avg_overhead_pct,
             "total_sessions": total_sessions,
@@ -258,4 +360,14 @@ async def get_cost_breakdown(
         },
         "agents": agents_data,
         "tuning_candidates": tuning_candidates,
+        "monthly_retry_loop_trends": monthly_trends,
+        "retry_loops_summary": {
+            "current_window_wasted_cost": total_misunderstanding,
+            "current_window_wasted_pct": avg_misunderstanding_pct,
+            "historical_wasted_cost": historical_wasted_cost,
+            "total_flagged_loops": total_loops_count,
+            "estimated_savings_with_clarification": potential_savings,
+            "primary_waste_driver": max(agents_data, key=lambda a: a["misunderstanding_cost"])["agent_name"] if agents_data else "None",
+        },
     }
+
