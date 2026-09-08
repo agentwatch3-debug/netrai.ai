@@ -95,7 +95,7 @@ export default function CircuitBreakerPage() {
   }
 
   if (loading) {
-    return <div className="text-sm text-slate-400">Loading Circuit Breaker status...</div>;
+    return <div className="text-xs font-mono text-inkDim py-4">Loading Circuit Breaker status...</div>;
   }
 
   const isThrottled = status?.is_throttled;
@@ -105,31 +105,31 @@ export default function CircuitBreakerPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-white">Automated Cost Runaway Circuit Breaker</h1>
-        <p className="text-sm text-slate-400">
+      <div className="border-b border-border pb-4">
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Automated Cost Runaway Circuit Breaker</h1>
+        <p className="mt-1 text-xs text-inkDim">
           Real-time runaway cost detection, infinite tool loop kill-switch, emergency webhooks, and automatic throttling.
         </p>
       </div>
 
       {/* Main Status Hero Banner */}
       {isThrottled ? (
-        <div className="rounded-xl border border-red-500/80 bg-red-950/40 p-6 space-y-4">
+        <div className="border border-bad bg-bad/10 p-6 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-600 text-white">
+              <div className="flex h-12 w-12 items-center justify-center border border-bad bg-bad text-paper">
                 <AlertOctagon size={28} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-white">CIRCUIT BREAKER TRIPPED — ORG THROTTLED</h2>
-                  <Badge className="bg-red-900 text-red-200 border-red-700 text-xs">HTTP 429 Active</Badge>
+                  <h2 className="text-base font-bold text-bad font-mono">CIRCUIT BREAKER TRIPPED — ORG THROTTLED</h2>
+                  <Badge variant="bad" className="text-xs font-mono">HTTP 429 Active</Badge>
                 </div>
-                <p className="text-xs text-red-200 mt-1">
+                <p className="text-xs text-ink mt-1">
                   Reason: <strong>{status?.throttled_reason || "Runaway cost spike exceeded safety threshold"}</strong>
                 </p>
                 {status?.throttled_at && (
-                  <p className="text-[11px] text-red-300/80 font-mono mt-0.5">
+                  <p className="text-[11px] text-inkDim font-mono mt-0.5">
                     Tripped At: {new Date(status.throttled_at).toLocaleString()}
                   </p>
                 )}
@@ -139,26 +139,27 @@ export default function CircuitBreakerPage() {
             <Button
               onClick={() => void handleReset()}
               disabled={resetting}
-              className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs h-10 px-5 flex items-center gap-2"
+              variant="destructive"
+              className="font-bold text-xs h-9 px-4 flex items-center gap-2 font-mono"
             >
-              <RefreshCw size={15} className={resetting ? "animate-spin" : ""} />
+              <RefreshCw size={14} className={resetting ? "animate-spin" : ""} />
               {resetting ? "Resetting..." : "Reset Circuit Breaker & Resume Traffic"}
             </Button>
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-emerald-900/60 bg-emerald-950/20 p-6">
+        <div className="border border-good/40 bg-good/5 p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-400">
+              <div className="flex h-12 w-12 items-center justify-center border border-good bg-good/10 text-good">
                 <ShieldCheck size={28} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-bold text-white">Circuit Breaker Armed & Monitoring</h2>
-                  <Badge className="bg-emerald-950 text-emerald-300 border-emerald-800 text-[10px]">Normal (Active Guard)</Badge>
+                  <h2 className="text-base font-bold text-ink">Circuit Breaker Armed & Monitoring</h2>
+                  <Badge variant="good" className="text-[10px] font-mono">Normal (Active Guard)</Badge>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-inkDim mt-0.5">
                   Continuously inspecting 5-minute spend velocity and infinite loop patterns across all agent spans.
                 </p>
               </div>
@@ -166,18 +167,18 @@ export default function CircuitBreakerPage() {
 
             <div className="flex items-center gap-6 font-mono text-xs">
               <div className="text-right">
-                <span className="text-[10px] text-slate-400 block uppercase">5-Min Burn Velocity</span>
-                <span className="text-base font-bold text-emerald-400">${currentBurn.toFixed(2)}</span>
-                <span className="text-slate-500 text-[11px]"> / ${maxBurn.toFixed(2)} limit</span>
+                <span className="text-[10px] text-inkDim block uppercase">5-Min Burn Velocity</span>
+                <span className="text-base font-bold text-good">${currentBurn.toFixed(2)}</span>
+                <span className="text-inkFaint text-[11px]"> / ${maxBurn.toFixed(2)} limit</span>
               </div>
               <div className="w-32 space-y-1">
-                <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+                <div className="h-2 bg-paper border border-border overflow-hidden">
                   <div
-                    className={`h-full transition-all ${burnPercent > 75 ? "bg-red-500" : burnPercent > 40 ? "bg-amber-500" : "bg-emerald-500"}`}
+                    className={`h-full transition-all ${burnPercent > 75 ? "bg-bad" : burnPercent > 40 ? "bg-warn" : "bg-good"}`}
                     style={{ width: `${Math.max(burnPercent, 5)}%` }}
                   />
                 </div>
-                <div className="text-[10px] text-slate-500 text-right">{burnPercent}% of limit</div>
+                <div className="text-[10px] text-inkDim text-right">{burnPercent}% of limit</div>
               </div>
             </div>
           </div>
@@ -187,74 +188,74 @@ export default function CircuitBreakerPage() {
       {/* Settings & Configuration Form */}
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-6">
-          <Card className="border-slate-800 bg-slate-900/40 p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-                <Zap size={16} className="text-amber-400" /> Threshold & Trigger Settings
+          <Card className="border border-border bg-surface p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h2 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-2 font-mono">
+                <Zap size={16} className="text-accent" /> Threshold & Trigger Settings
               </h2>
-              {saveSuccess && <span className="text-xs text-emerald-400 flex items-center gap-1"><CheckCircle2 size={12} /> Saved</span>}
+              {saveSuccess && <span className="text-xs text-good flex items-center gap-1 font-mono"><CheckCircle2 size={12} /> Saved</span>}
             </div>
 
-            <form onSubmit={handleSaveConfig} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-300 flex items-center justify-between">
+            <form onSubmit={handleSaveConfig} className="space-y-4 text-xs font-mono">
+              <div className="space-y-1">
+                <label className="font-semibold text-inkDim flex items-center justify-between">
                   <span>5-Minute Cost Runaway Limit ($ USD)</span>
-                  <span className="text-[11px] text-slate-500 font-mono">Default: $50.00</span>
+                  <span className="text-[10px] text-inkFaint">Default: $50.00</span>
                 </label>
                 <div className="relative">
-                  <DollarSign size={14} className="absolute left-3 top-3 text-slate-500" />
+                  <DollarSign size={14} className="absolute left-3 top-2.5 text-inkDim" />
                   <input
                     type="number"
                     step="1"
                     min="1"
-                    className="w-full h-9 rounded-lg border border-slate-800 bg-slate-950 pl-8 pr-3 text-xs text-white focus:border-blue-500 focus:outline-none"
+                    className="w-full h-8 border border-border bg-surface pl-8 pr-3 text-xs text-ink placeholder-inkFaint focus:border-ink focus:outline-none font-mono"
                     value={maxCost}
                     onChange={(e) => setMaxCost(e.target.value)}
                     required
                   />
                 </div>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[10px] text-inkDim">
                   If total span spend across all agents exceeds this amount within any 5-minute rolling window, the circuit breaker automatically throttles the org.
                 </p>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-300 flex items-center justify-between">
+              <div className="space-y-1">
+                <label className="font-semibold text-inkDim flex items-center justify-between">
                   <span>Max Consecutive Tool Calls in Single Trace</span>
-                  <span className="text-[11px] text-slate-500 font-mono">Default: 30 calls</span>
+                  <span className="text-[10px] text-inkFaint">Default: 30 calls</span>
                 </label>
                 <input
                   type="number"
                   step="1"
                   min="5"
-                  className="w-full h-9 rounded-lg border border-slate-800 bg-slate-950 px-3 text-xs text-white focus:border-blue-500 focus:outline-none"
+                  className="w-full h-8 border border-border bg-surface px-3 text-xs text-ink placeholder-inkFaint focus:border-ink focus:outline-none font-mono"
                   value={maxLoop}
                   onChange={(e) => setMaxLoop(e.target.value)}
                   required
                 />
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[10px] text-inkDim">
                   Prevents infinite recursive agent loops (e.g. an agent endlessly re-executing search tools).
                 </p>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-300">
+              <div className="space-y-1">
+                <label className="font-semibold text-inkDim">
                   Emergency Alert Webhook URL (Slack / PagerDuty)
                 </label>
                 <input
                   type="url"
-                  className="w-full h-9 rounded-lg border border-slate-800 bg-slate-950 px-3 text-xs text-white font-mono placeholder-slate-600 focus:border-blue-500 focus:outline-none"
+                  className="w-full h-8 border border-border bg-surface px-3 text-xs text-ink font-mono placeholder-inkFaint focus:border-ink focus:outline-none"
                   placeholder="https://hooks.slack.com/services/..."
                   value={webhookUrl}
                   onChange={(e) => setWebhookUrl(e.target.value)}
                 />
-                <p className="text-[11px] text-slate-500">
-                  An immediate high-priority alert payload is dispatched to this endpoint the millisecond the breaker trips.
+                <p className="text-[10px] text-inkDim">
+                  An immediate alert payload is dispatched to this endpoint the millisecond the breaker trips.
                 </p>
               </div>
 
               <div className="flex justify-end pt-2">
-                <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-500 text-xs flex items-center gap-1.5">
+                <Button type="submit" disabled={saving} variant="primary" className="text-xs h-8 flex items-center gap-1.5 font-mono">
                   <Save size={14} /> {saving ? "Saving..." : "Save Settings"}
                 </Button>
               </div>
@@ -264,38 +265,38 @@ export default function CircuitBreakerPage() {
 
         {/* Incident Audit Log Table */}
         <div className="space-y-6 lg:col-span-6">
-          <Card className="border-slate-800 bg-slate-900/40 p-6 space-y-4">
-            <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-              <History size={16} className="text-slate-400" /> Circuit Breaker Incident Audit Log
+          <Card className="border border-border bg-surface p-6 space-y-4">
+            <h2 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-2 border-b border-border pb-3 font-mono">
+              <History size={16} className="text-accent" /> Circuit Breaker Incident Audit Log
             </h2>
 
             <div className="space-y-3">
               {(status?.events || []).length > 0 ? (
                 (status?.events || []).map((ev) => (
-                  <div key={ev.id} className="rounded-lg border border-slate-800 bg-slate-950 p-3 text-xs space-y-2">
+                  <div key={ev.id} className="border border-border bg-paper p-3 text-xs space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Badge className="bg-red-950 text-red-300 border-red-800 font-mono text-[9px]">
+                        <Badge variant="bad" className="font-mono text-[9px]">
                           {ev.trigger_type}
                         </Badge>
-                        <span className="font-bold text-white font-mono text-[11px]">
+                        <span className="font-bold text-ink font-mono text-[11px]">
                           {ev.cost_at_trigger ? `$${Number(ev.cost_at_trigger).toFixed(2)} in 5m` : `${ev.loop_count} tool calls`}
                         </span>
                       </div>
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-[10px] text-inkDim font-mono">
                         {new Date(ev.created_at).toLocaleString()}
                       </span>
                     </div>
                     {ev.details?.reason && (
-                      <p className="text-[11px] text-slate-400">{ev.details.reason}</p>
+                      <p className="text-[11px] text-inkDim font-mono">{ev.details.reason}</p>
                     )}
-                    <div className="text-[10px] text-slate-500 flex items-center gap-2 border-t border-slate-900 pt-1">
-                      <span>Action: <strong>{ev.action_taken}</strong></span>
+                    <div className="text-[10px] text-inkDim flex items-center gap-2 border-t border-border pt-1 font-mono">
+                      <span>Action: <strong className="text-ink">{ev.action_taken}</strong></span>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-slate-500 italic py-4 text-center">No circuit breaker incidents recorded.</p>
+                <p className="text-xs text-inkDim italic py-4 text-center font-mono">No circuit breaker incidents recorded.</p>
               )}
             </div>
           </Card>

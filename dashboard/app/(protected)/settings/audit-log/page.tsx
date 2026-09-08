@@ -137,10 +137,10 @@ export default function AuditLogPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="text-xl font-semibold text-white">Tamper-Evident Cryptographic Audit Log</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Tamper-Evident Cryptographic Audit Log</h1>
+          <p className="mt-1 text-xs text-inkDim">
             Append-only, tamper-evident security and AI compliance log secured by per-organization SHA-256 hash chains designed to support SOC 2, HIPAA, and DPDP compliance workflows.
           </p>
         </div>
@@ -149,7 +149,8 @@ export default function AuditLogPage() {
           <Button
             onClick={() => void handleExportCSV()}
             disabled={exporting}
-            className="h-8 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1.5 font-mono shadow-sm"
+            variant="outline"
+            className="h-8 text-xs flex items-center gap-1.5 font-mono"
           >
             <Download size={13} className={exporting ? "animate-pulse" : ""} />
             {exporting ? "Exporting CSV..." : "Export Compliance CSV"}
@@ -158,7 +159,8 @@ export default function AuditLogPage() {
           <Button
             onClick={() => void handleVerifyIntegrity()}
             disabled={verifying}
-            className="h-8 text-xs bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 font-mono shadow-sm"
+            variant="primary"
+            className="h-8 text-xs flex items-center gap-1.5 font-mono"
           >
             <ShieldCheck size={14} className={verifying ? "animate-spin" : ""} />
             {verifying ? "Verifying Hash Chain..." : "Verify Integrity"}
@@ -166,7 +168,8 @@ export default function AuditLogPage() {
 
           <Button
             onClick={() => void loadData(filterType)}
-            className="h-8 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1.5"
+            variant="outline"
+            className="h-8 text-xs flex items-center gap-1.5 font-mono"
           >
             <RefreshCw size={13} /> Refresh
           </Button>
@@ -175,19 +178,19 @@ export default function AuditLogPage() {
 
       {/* Cryptographic Proof Verification Card */}
       <Card
-        className={`p-5 border transition-all ${
+        className={`p-5 border transition-colors ${
           isIntact
-            ? "border-emerald-900/60 bg-emerald-950/20"
-            : "border-red-900/60 bg-red-950/20"
+            ? "border-good/40 bg-good/5"
+            : "border-bad/40 bg-bad/5"
         }`}
       >
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/60 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-3">
           <div className="flex items-center gap-3">
             <div
-              className={`flex h-10 w-10 items-center justify-center rounded-xl border ${
+              className={`flex h-10 w-10 items-center justify-center border ${
                 isIntact
-                  ? "bg-emerald-950 border-emerald-700 text-emerald-400"
-                  : "bg-red-950 border-red-700 text-red-400"
+                  ? "border-good bg-good/10 text-good"
+                  : "border-bad bg-bad/10 text-bad"
               }`}
             >
               {isIntact ? <ShieldCheck size={20} /> : <ShieldAlert size={20} />}
@@ -195,20 +198,17 @@ export default function AuditLogPage() {
 
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-white">
+                <span className="text-sm font-bold text-ink font-mono">
                   {isIntact ? "Cryptographic Chain Verified & Intact" : "Tamper Detected in Hash Chain!"}
                 </span>
                 <Badge
-                  className={
-                    isIntact
-                      ? "bg-emerald-950 text-emerald-300 border-emerald-800 text-[10px] font-mono"
-                      : "bg-red-950 text-red-300 border-red-800 text-[10px] font-mono"
-                  }
+                  variant={isIntact ? "good" : "bad"}
+                  className="text-[10px] font-mono"
                 >
                   {isIntact ? "Tamper-Evident (Intact)" : "CHAIN CORRUPTED"}
                 </Badge>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-inkDim mt-0.5">
                 {isIntact
                   ? `All ${verification?.total_entries || logs.length} audit entries sequentially chained with unbroken SHA-256 hashes.`
                   : verification?.reason || "Hash link mismatch detected."}
@@ -216,9 +216,9 @@ export default function AuditLogPage() {
             </div>
           </div>
 
-          <div className="text-right font-mono text-[11px] text-slate-400">
+          <div className="text-right font-mono text-[11px] text-inkDim">
             <span>Last Verified: </span>
-            <strong className="text-slate-300">
+            <strong className="text-ink">
               {verification?.verified_at ? new Date(verification.verified_at).toLocaleTimeString() : "Just now"}
             </strong>
           </div>
@@ -226,22 +226,22 @@ export default function AuditLogPage() {
 
         <div className="grid gap-4 sm:grid-cols-3 pt-3 text-xs font-mono">
           <div>
-            <span className="text-[10px] text-slate-500 uppercase">Database Hardening</span>
-            <p className="text-emerald-400 font-bold flex items-center gap-1 mt-0.5">
+            <span className="text-[10px] text-inkDim uppercase">Database Hardening</span>
+            <p className="text-good font-bold flex items-center gap-1 mt-0.5">
               <Lock size={12} /> Append-Only (REVOKE UPDATE/DELETE)
             </p>
           </div>
 
           <div>
-            <span className="text-[10px] text-slate-500 uppercase">Cryptographic Chain Depth</span>
-            <p className="text-white font-bold mt-0.5">
+            <span className="text-[10px] text-inkDim uppercase">Cryptographic Chain Depth</span>
+            <p className="text-ink font-bold mt-0.5">
               {verification?.total_entries || logs.length} Sequential Blocks
             </p>
           </div>
 
           <div>
-            <span className="text-[10px] text-slate-500 uppercase">Hash Chain Algorithm</span>
-            <p className="text-blue-400 font-bold flex items-center gap-1 mt-0.5">
+            <span className="text-[10px] text-inkDim uppercase">Hash Chain Algorithm</span>
+            <p className="text-accent font-bold flex items-center gap-1 mt-0.5">
               <Fingerprint size={12} /> Canonical JSON SHA-256
             </p>
           </div>
@@ -249,44 +249,44 @@ export default function AuditLogPage() {
       </Card>
 
       {/* Filter Tabs and Audit Log Table */}
-      <Card className="border-slate-800 bg-slate-900/40 p-6 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+      <Card className="border border-border bg-surface p-6 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
           <div className="flex items-center gap-2">
-            <FileText size={16} className="text-blue-400" />
-            <h2 className="text-sm font-bold text-white">
+            <FileText size={16} className="text-accent" />
+            <h2 className="text-xs font-bold text-ink uppercase tracking-wider font-mono">
               Audit Log Entries ({logs.length})
             </h2>
           </div>
 
           {/* Compliance & Quality Filter Controls */}
-          <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800">
+          <div className="flex items-center gap-1 border border-border bg-paper p-0.5">
             <button
               onClick={() => setFilterType("all")}
-              className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${
+              className={`px-3 py-1 text-xs font-mono font-medium transition-colors ${
                 filterType === "all"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-ink text-paper"
+                  : "text-inkDim hover:text-ink"
               }`}
             >
               All Events
             </button>
             <button
               onClick={() => setFilterType("ai_quality")}
-              className={`px-3 py-1 text-xs rounded-md font-medium flex items-center gap-1.5 transition-colors ${
+              className={`px-3 py-1 text-xs font-mono font-medium flex items-center gap-1.5 transition-colors ${
                 filterType === "ai_quality"
-                  ? "bg-amber-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-amber-300"
+                  ? "bg-warn text-paper font-bold"
+                  : "text-inkDim hover:text-ink"
               }`}
             >
               <AlertTriangle size={12} />
-              AI Quality Compliance Events
+              AI Quality Events
             </button>
             <button
               onClick={() => setFilterType("access")}
-              className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${
+              className={`px-3 py-1 text-xs font-mono font-medium transition-colors ${
                 filterType === "access"
-                  ? "bg-slate-700 text-white shadow-sm"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-ink text-paper"
+                  : "text-inkDim hover:text-ink"
               }`}
             >
               Access Logs
@@ -295,9 +295,9 @@ export default function AuditLogPage() {
         </div>
 
         {loading ? (
-          <div className="py-8 text-center text-sm text-slate-400">Loading audit records...</div>
+          <div className="py-8 text-center text-xs font-mono text-inkDim">Loading audit records...</div>
         ) : logs.length === 0 ? (
-          <div className="py-8 text-center text-sm text-slate-500">
+          <div className="py-8 text-center text-xs font-mono text-inkDim">
             No audit records found matching the selected filter.
           </div>
         ) : (
@@ -313,80 +313,77 @@ export default function AuditLogPage() {
               return (
                 <div
                   key={entry.id}
-                  className={`rounded-lg border p-4 text-xs space-y-3 relative transition-colors ${
+                  className={`border p-4 text-xs space-y-3 transition-colors ${
                     isAIQuality
-                      ? "border-amber-700/60 bg-amber-950/20 hover:border-amber-600"
-                      : "border-slate-800 bg-slate-950 hover:border-slate-700"
+                      ? "border-warn/40 bg-warn/5"
+                      : "border-border bg-paper hover:border-borderStrong"
                   }`}
                 >
                   {/* Header Row */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-900 pb-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-[11px] font-bold text-blue-400">
+                      <span className="font-mono text-[11px] font-bold text-accent">
                         Block #{entry.id}
                       </span>
 
                       <Badge
-                        className={
-                          isAIQuality
-                            ? "bg-amber-950 text-amber-300 border-amber-800 font-mono text-[10px]"
-                            : "bg-slate-800 text-slate-200 font-mono text-[10px]"
-                        }
+                        variant={isAIQuality ? "warn" : "secondary"}
+                        className="font-mono text-[10px]"
                       >
                         {entry.action}
                       </Badge>
 
                       {isAIQuality && (
-                        <Badge className="bg-red-950 text-red-300 border-red-800 font-mono text-[9px] flex items-center gap-1">
+                        <Badge variant="bad" className="font-mono text-[9px] flex items-center gap-1">
                           <AlertTriangle size={10} /> Regulated Interaction Alert
                         </Badge>
                       )}
 
-                      <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                        {isAIQuality ? <Bot size={12} className="text-amber-400" /> : <User size={12} className="text-slate-500" />}
+                      <div className="flex items-center gap-1 text-[11px] text-inkDim font-mono">
+                        {isAIQuality ? <Bot size={12} className="text-warn" /> : <User size={12} className="text-inkDim" />}
                         <span>{entry.actor_email || entry.actor_id}</span>
                       </div>
                     </div>
 
-                    <span className="text-[11px] text-slate-500 font-mono">
+                    <span className="text-[11px] text-inkDim font-mono">
                       {new Date(entry.created_at).toLocaleString()}
                     </span>
                   </div>
 
                   {/* AI Quality Specialized Incident Card */}
                   {isAIQuality && (
-                    <div className="rounded border border-amber-800/40 bg-slate-900/80 p-3 space-y-2">
+                    <div className="border border-warn/30 bg-surface p-3 space-y-2">
                       <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
                         <div>
-                          <span className="text-slate-400">Score ({details.score_type || "faithfulness"}): </span>
-                          <strong className="text-red-400 font-bold">
+                          <span className="text-inkDim">Score ({details.score_type || "faithfulness"}): </span>
+                          <strong className="text-bad font-bold">
                             {details.score !== undefined ? details.score.toFixed(2) : "N/A"}
                           </strong>
                           {details.threshold !== undefined && (
-                            <span className="text-slate-500 text-[11px]"> (Threshold: {details.threshold.toFixed(2)})</span>
+                            <span className="text-inkDim text-[11px]"> (Threshold: {details.threshold.toFixed(2)})</span>
                           )}
                         </div>
 
                         {details.action_taken && (
                           <div>
-                            <span className="text-slate-400">Gating Action: </span>
-                            <Badge className="bg-slate-800 text-amber-300 uppercase text-[9px]">
+                            <span className="text-inkDim">Gating Action: </span>
+                            <Badge variant="secondary" className="uppercase text-[9px] font-mono font-bold">
                               {details.action_taken}
                             </Badge>
                           </div>
                         )}
 
                         {details.consent_id && (
-                          <div className="text-slate-400 text-[11px]">
-                            Consent ID: <span className="text-slate-200">{details.consent_id}</span>
+                          <div className="text-inkDim text-[11px]">
+                            Consent ID: <span className="text-ink">{details.consent_id}</span>
                           </div>
                         )}
                       </div>
 
                       {details.unsupported_claims && details.unsupported_claims.length > 0 && (
                         <div className="mt-1">
-                          <span className="text-[10px] text-amber-400 font-semibold uppercase">Unsupported Claims / Hallucinations:</span>
-                          <ul className="list-disc list-inside mt-0.5 space-y-0.5 text-[11px] text-red-300/90 font-mono">
+                          <span className="text-[10px] text-bad font-semibold uppercase font-mono">Unsupported Claims / Hallucinations:</span>
+                          <ul className="list-disc list-inside mt-0.5 space-y-0.5 text-[11px] text-bad font-mono">
                             {details.unsupported_claims.map((claim: string, i: number) => (
                               <li key={i}>{claim}</li>
                             ))}
@@ -396,8 +393,8 @@ export default function AuditLogPage() {
 
                       {details.uncertain_claims && details.uncertain_claims.length > 0 && (
                         <div className="mt-1">
-                          <span className="text-[10px] text-amber-300 font-semibold uppercase">Uncertain / Unverified Claims:</span>
-                          <ul className="list-disc list-inside mt-0.5 space-y-0.5 text-[11px] text-amber-200/90 font-mono">
+                          <span className="text-[10px] text-warn font-semibold uppercase font-mono">Uncertain / Unverified Claims:</span>
+                          <ul className="list-disc list-inside mt-0.5 space-y-0.5 text-[11px] text-warn font-mono">
                             {details.uncertain_claims.map((claim: string, i: number) => (
                               <li key={i}>{claim}</li>
                             ))}
@@ -410,19 +407,19 @@ export default function AuditLogPage() {
                   {/* Target & Details */}
                   <div className="grid gap-3 sm:grid-cols-2 text-xs font-mono">
                     <div>
-                      <span className="text-[10px] text-slate-500 uppercase">Target</span>
-                      <p className="text-slate-300 font-bold mt-0.5">
-                        {entry.target_type}: <span className="text-white">{entry.target_id}</span>
+                      <span className="text-[10px] text-inkDim uppercase">Target</span>
+                      <p className="text-ink font-bold mt-0.5">
+                        {entry.target_type}: <span className="text-accent">{entry.target_id}</span>
                       </p>
                       {entry.ip_address && (
-                        <span className="text-[10px] text-slate-500 block mt-0.5">IP: {entry.ip_address}</span>
+                        <span className="text-[10px] text-inkDim block mt-0.5">IP: {entry.ip_address}</span>
                       )}
                     </div>
 
                     {entry.details && !isAIQuality && (
                       <div>
-                        <span className="text-[10px] text-slate-500 uppercase">Details</span>
-                        <pre className="rounded bg-slate-900/60 p-1.5 text-[10px] text-slate-400 overflow-x-auto mt-0.5">
+                        <span className="text-[10px] text-inkDim uppercase">Details</span>
+                        <pre className="border border-border bg-surface p-1.5 text-[10px] text-ink overflow-x-auto mt-0.5">
                           {JSON.stringify(entry.details)}
                         </pre>
                       </div>
@@ -430,26 +427,26 @@ export default function AuditLogPage() {
                   </div>
 
                   {/* Cryptographic Hash Chain Linker */}
-                  <div className="pt-2 border-t border-slate-900 flex flex-wrap items-center justify-between gap-2 font-mono text-[10px]">
-                    <div className="flex items-center gap-2 text-slate-400">
-                      <Link2 size={12} className="text-blue-400" />
+                  <div className="pt-2 border-t border-border flex flex-wrap items-center justify-between gap-2 font-mono text-[10px]">
+                    <div className="flex items-center gap-2 text-inkDim">
+                      <Link2 size={12} className="text-accent" />
                       <span>
                         Prev Hash:{" "}
-                        <span className="text-slate-500">
+                        <span className="text-inkFaint">
                           {isGenesis ? "[GENESIS BLOCK: 00000000...]" : `${entry.prev_hash.substring(0, 16)}...`}
                         </span>
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded border border-slate-800 text-slate-300">
-                      <Hash size={11} className="text-emerald-400" />
-                      <span>Entry Hash: <strong className="text-emerald-300">{entry.entry_hash.substring(0, 16)}...</strong></span>
+                    <div className="flex items-center gap-1.5 border border-border bg-surface px-2.5 py-1 text-ink">
+                      <Hash size={11} className="text-good" />
+                      <span>Entry Hash: <strong className="text-good font-mono">{entry.entry_hash.substring(0, 16)}...</strong></span>
                       <button
                         onClick={() => copyHash(entry.entry_hash)}
-                        className="text-slate-500 hover:text-white ml-1"
+                        className="text-inkDim hover:text-ink ml-1"
                         title="Copy full SHA-256 hash"
                       >
-                        <Copy size={11} className={copiedHash === entry.entry_hash ? "text-emerald-400" : ""} />
+                        <Copy size={11} className={copiedHash === entry.entry_hash ? "text-good" : ""} />
                       </button>
                     </div>
                   </div>

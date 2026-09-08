@@ -108,7 +108,7 @@ export default function OutputPoliciesPage() {
   }
 
   if (loading) {
-    return <div className="text-sm text-slate-400">Loading Output Regulatory Policies...</div>;
+    return <div className="text-xs font-mono text-inkDim py-4">Loading Output Regulatory Policies...</div>;
   }
 
   const activeTemplatesCount = templates.filter((t) => t.is_active).length;
@@ -116,48 +116,48 @@ export default function OutputPoliciesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-white">Regulatory Output Policies & Guardrails</h1>
-        <p className="text-sm text-slate-400">
+      <div className="border-b border-border pb-4">
+        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Regulatory Output Policies & Guardrails</h1>
+        <p className="mt-1 text-xs text-inkDim">
           Enforce pre-return compliance guardrails on LLM responses across Banking, Healthcare, and custom industry rules.
         </p>
       </div>
 
-      {/* Hero Metrics */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="border-slate-800 bg-slate-900/40 p-5 space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 uppercase font-semibold">Active Policy Templates</span>
-            <Scale size={16} className="text-blue-400" />
+      {/* Hero Metrics Strip */}
+      <div className="grid border border-border bg-surface sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
+        <div className="p-4 space-y-1">
+          <div className="flex items-center justify-between text-inkDim text-xs font-mono">
+            <span>ACTIVE POLICY TEMPLATES</span>
+            <Scale size={16} className="text-accent" />
           </div>
-          <p className="text-2xl font-bold text-white font-mono pt-1">
-            {activeTemplatesCount} <span className="text-xs text-slate-500 font-normal">/ {templates.length} total</span>
+          <p className="text-2xl font-bold text-ink font-mono pt-1">
+            {activeTemplatesCount} <span className="text-xs text-inkDim font-normal">/ {templates.length} total</span>
           </p>
-          <p className="text-[11px] text-slate-500">Live regulatory templates active in SDK perimeter</p>
-        </Card>
+          <p className="text-[10px] text-inkFaint font-mono">Live regulatory templates active in SDK perimeter</p>
+        </div>
 
-        <Card className="border-slate-800 bg-slate-900/40 p-5 space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 uppercase font-semibold">Enforced Compliance Rules</span>
-            <ShieldCheck size={16} className="text-emerald-400" />
+        <div className="p-4 space-y-1">
+          <div className="flex items-center justify-between text-inkDim text-xs font-mono">
+            <span>ENFORCED RULES</span>
+            <ShieldCheck size={16} className="text-good" />
           </div>
-          <p className="text-2xl font-bold text-emerald-400 font-mono pt-1">{totalRulesCount}</p>
-          <p className="text-[11px] text-slate-500">Interest rate disclaimers, medical non-diagnosis, etc.</p>
-        </Card>
+          <p className="text-2xl font-bold text-good font-mono pt-1">{totalRulesCount}</p>
+          <p className="text-[10px] text-inkFaint font-mono">Interest disclaimers, medical non-diagnosis, etc.</p>
+        </div>
 
-        <Card className="border-slate-800 bg-slate-900/40 p-5 space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 uppercase font-semibold">Total Violations Intercepted</span>
-            <AlertOctagon size={16} className="text-red-400" />
+        <div className="p-4 space-y-1">
+          <div className="flex items-center justify-between text-inkDim text-xs font-mono">
+            <span>INTERCEPTED VIOLATIONS</span>
+            <AlertOctagon size={16} className="text-bad" />
           </div>
-          <p className="text-2xl font-bold text-red-400 font-mono pt-1">{violations.length}</p>
-          <p className="text-[11px] text-slate-500">Blocked before returning to end users</p>
-        </Card>
+          <p className="text-2xl font-bold text-bad font-mono pt-1">{violations.length}</p>
+          <p className="text-[10px] text-inkFaint font-mono">Blocked before returning to end users</p>
+        </div>
       </div>
 
       {/* Industry Templates Grid */}
       <div className="space-y-4">
-        <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
+        <h2 className="text-xs font-bold text-ink uppercase tracking-wider font-mono">
           Industry Guardrail Templates
         </h2>
 
@@ -168,20 +168,20 @@ export default function OutputPoliciesPage() {
             return (
               <Card
                 key={template.id}
-                className={`border p-6 space-y-4 transition-all ${
+                className={`border p-5 space-y-4 transition-colors ${
                   template.is_active
-                    ? "border-blue-900/50 bg-slate-900/50"
-                    : "border-slate-800 bg-slate-950/30 opacity-70"
+                    ? "border-borderStrong bg-surface"
+                    : "border-border bg-paper opacity-80"
                 }`}
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-950 border border-blue-800/60 text-blue-400">
+                    <div className="flex h-9 w-9 items-center justify-center border border-border bg-paper text-accent">
                       {isBanking ? <Landmark size={18} /> : <HeartPulse size={18} />}
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white">{template.name}</h3>
-                      <span className="font-mono text-[10px] text-slate-400 uppercase">
+                      <h3 className="text-sm font-bold text-ink">{template.name}</h3>
+                      <span className="font-mono text-[10px] text-inkDim uppercase">
                         Industry: {template.industry}
                       </span>
                     </div>
@@ -190,38 +190,32 @@ export default function OutputPoliciesPage() {
                   <Button
                     onClick={() => void handleToggle(template.id)}
                     disabled={togglingId === template.id}
-                    className={`h-7 text-xs px-3 font-semibold ${
-                      template.is_active
-                        ? "bg-emerald-600 hover:bg-emerald-500 text-white"
-                        : "bg-slate-800 hover:bg-slate-700 text-slate-400"
-                    }`}
+                    variant={template.is_active ? "primary" : "outline"}
+                    className="h-7 text-xs px-3 font-mono font-semibold"
                   >
-                    {template.is_active ? "Enabled (Active)" : "Disabled"}
+                    {template.is_active ? "Enabled" : "Disabled"}
                   </Button>
                 </div>
 
-                <p className="text-xs text-slate-300">{template.description}</p>
+                <p className="text-xs text-inkDim">{template.description}</p>
 
                 <div className="space-y-2 pt-1">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase">
+                  <span className="text-[11px] font-mono font-bold text-inkDim uppercase">
                     Configured Rules ({template.rules?.length || 0})
                   </span>
                   <div className="space-y-2">
                     {(template.rules || []).map((r) => (
-                      <div key={r.id} className="rounded-lg border border-slate-800/80 bg-slate-950 p-3 text-xs space-y-1.5">
+                      <div key={r.id} className="border border-border bg-paper p-3 text-xs space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono font-bold text-white text-[11px]">{r.name}</span>
+                          <span className="font-mono font-bold text-ink text-[11px]">{r.name}</span>
                           <Badge
-                            className={
-                              r.action === "block"
-                                ? "bg-red-950 text-red-300 border-red-800 text-[9px] uppercase"
-                                : "bg-amber-950 text-amber-300 border-amber-800 text-[9px] uppercase"
-                            }
+                            variant={r.action === "block" ? "bad" : "warn"}
+                            className="text-[9px] uppercase font-mono"
                           >
                             {r.action}
                           </Badge>
                         </div>
-                        <p className="text-[11px] text-slate-400">{r.message}</p>
+                        <p className="text-[11px] text-inkDim">{r.message}</p>
                       </div>
                     ))}
                   </div>
@@ -233,37 +227,39 @@ export default function OutputPoliciesPage() {
       </div>
 
       {/* Live Policy Testing Playground */}
-      <Card className="border-slate-800 bg-slate-900/40 p-6 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <Card className="border border-border bg-surface p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2">
-            <Sparkles size={16} className="text-amber-400" />
-            <h2 className="text-sm font-semibold text-white">Live Policy Scanner Playground</h2>
+            <Sparkles size={16} className="text-accent" />
+            <h2 className="text-xs font-bold text-ink uppercase tracking-wider font-mono">Live Policy Scanner Playground</h2>
           </div>
-          <span className="text-[11px] text-slate-500 font-mono">Simulate LLM Output Inspection</span>
+          <span className="text-[11px] text-inkDim font-mono">Simulate LLM Output Inspection</span>
         </div>
 
         <div className="space-y-3">
-          <label className="text-xs font-medium text-slate-300">Test Output Candidate</label>
+          <label className="text-xs font-mono font-medium text-inkDim">Test Output Candidate</label>
           <textarea
             rows={3}
-            className="w-full rounded-lg border border-slate-800 bg-slate-950 p-3 text-xs text-white font-mono focus:border-blue-500 focus:outline-none"
+            className="w-full border border-border bg-paper p-3 text-xs text-ink font-mono placeholder-inkFaint focus:border-ink focus:outline-none"
             value={testText}
             onChange={(e) => setTestText(e.target.value)}
           />
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Button
                 type="button"
                 onClick={() => setTestText("We can offer you a personal loan at 8.5% APR immediately.")}
-                className="h-6 text-[10px] bg-slate-800 text-slate-400 hover:text-white"
+                variant="outline"
+                className="h-6 text-[10px] font-mono"
               >
                 Sample: Banking (No Disclaimer)
               </Button>
               <Button
                 type="button"
                 onClick={() => setTestText("Based on your headache and fever, you definitely have acute sinusitis.")}
-                className="h-6 text-[10px] bg-slate-800 text-slate-400 hover:text-white"
+                variant="outline"
+                className="h-6 text-[10px] font-mono"
               >
                 Sample: Healthcare (Definitive Diagnosis)
               </Button>
@@ -272,7 +268,8 @@ export default function OutputPoliciesPage() {
             <Button
               onClick={() => void handleTestScan()}
               disabled={testing}
-              className="bg-blue-600 hover:bg-blue-500 text-xs flex items-center gap-1.5"
+              variant="primary"
+              className="text-xs h-7 flex items-center gap-1.5 font-mono"
             >
               <Play size={12} /> {testing ? "Scanning..." : "Run Policy Scan"}
             </Button>
@@ -280,16 +277,16 @@ export default function OutputPoliciesPage() {
 
           {testResult && (
             <div
-              className={`rounded-lg border p-4 text-xs space-y-2 mt-3 ${
+              className={`border p-4 text-xs space-y-2 mt-3 ${
                 testResult.is_blocked
-                  ? "border-red-500/80 bg-red-950/30"
+                  ? "border-bad bg-bad/10"
                   : (testResult.violations || []).length > 0
-                  ? "border-amber-500/80 bg-amber-950/30"
-                  : "border-emerald-500/80 bg-emerald-950/30"
+                  ? "border-warn bg-warn/10"
+                  : "border-good bg-good/10"
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold text-white">
+                <span className="font-bold text-ink font-mono">
                   {testResult.is_blocked
                     ? "🚨 BLOCKED — OutputPolicyViolation Raised"
                     : (testResult.violations || []).length > 0
@@ -299,13 +296,13 @@ export default function OutputPoliciesPage() {
               </div>
 
               {(testResult.violations || []).map((v: any, idx: number) => (
-                <div key={idx} className="rounded bg-slate-950/80 border border-slate-800 p-2 text-[11px] space-y-1">
+                <div key={idx} className="bg-surface border border-border p-2.5 text-[11px] space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-red-300">{v.rule_name}</span>
-                    <Badge className="bg-red-950 text-red-300 border-red-800 text-[9px]">{v.action}</Badge>
+                    <span className="font-mono font-bold text-bad">{v.rule_name}</span>
+                    <Badge variant="bad" className="text-[9px] font-mono">{v.action}</Badge>
                   </div>
-                  <p className="text-slate-300">{v.message}</p>
-                  <p className="text-[10px] text-slate-500 font-mono">Matched: &quot;{v.matched_text}&quot;</p>
+                  <p className="text-inkDim">{v.message}</p>
+                  <p className="text-[10px] text-inkFaint font-mono">Matched: &quot;{v.matched_text}&quot;</p>
                 </div>
               ))}
             </div>
@@ -314,42 +311,42 @@ export default function OutputPoliciesPage() {
       </Card>
 
       {/* Historical Output Policy Violations Table */}
-      <Card className="border-slate-800 bg-slate-900/40 p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-          <ShieldAlert size={16} className="text-red-400" /> Recent Output Policy Violations Audit Log
+      <Card className="border border-border bg-surface p-6 space-y-4">
+        <h2 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-2 border-b border-border pb-3 font-mono">
+          <ShieldAlert size={16} className="text-bad" /> Recent Output Policy Violations Audit Log
         </h2>
 
         <div className="space-y-3">
           {violations.length > 0 ? (
             violations.map((v) => (
-              <div key={v.id} className="rounded-lg border border-slate-800 bg-slate-950 p-4 text-xs space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-900 pb-2">
+              <div key={v.id} className="border border-border bg-paper p-4 text-xs space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-red-950 text-red-300 border-red-800 font-mono text-[9px]">
+                    <Badge variant="bad" className="font-mono text-[9px]">
                       {v.action_taken.toUpperCase()}
                     </Badge>
-                    <span className="font-mono font-bold text-white">{v.rule_name}</span>
-                    <span className="text-slate-400">· Agent: <strong>{v.agent_id}</strong></span>
+                    <span className="font-mono font-bold text-ink">{v.rule_name}</span>
+                    <span className="text-inkDim font-mono">· Agent: <strong>{v.agent_id}</strong></span>
                   </div>
 
                   <div className="flex items-center gap-3 font-mono text-xs">
-                    <span className="text-[11px] text-slate-500">{new Date(v.detected_at).toLocaleString()}</span>
+                    <span className="text-[11px] text-inkDim">{new Date(v.detected_at).toLocaleString()}</span>
                     {v.trace_id && (
-                      <Link href={`/traces/${v.trace_id}`} className="text-blue-400 hover:underline flex items-center gap-0.5 text-[10px]">
+                      <Link href={`/traces/${v.trace_id}`} className="text-accent hover:underline flex items-center gap-0.5 text-[10px]">
                         Inspect Trace <ArrowUpRight size={11} />
                       </Link>
                     )}
                   </div>
                 </div>
 
-                <p className="text-xs text-red-300">{v.message}</p>
-                <div className="rounded bg-slate-900/80 border border-slate-800/80 p-2.5 font-mono text-[11px] text-slate-300">
+                <p className="text-xs text-bad font-mono">{v.message}</p>
+                <div className="border border-border bg-surface p-2.5 font-mono text-[11px] text-ink">
                   {v.output_snippet}
                 </div>
               </div>
             ))
           ) : (
-            <p className="text-xs text-slate-500 italic py-4 text-center">No output policy violations recorded.</p>
+            <p className="text-xs text-inkDim italic py-4 text-center font-mono">No output policy violations recorded.</p>
           )}
         </div>
       </Card>

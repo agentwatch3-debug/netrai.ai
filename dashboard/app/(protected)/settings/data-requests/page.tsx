@@ -107,7 +107,7 @@ export default function DataRequestsPage() {
   }
 
   if (loading) {
-    return <div className="text-sm text-slate-400">Loading Subject Rights requests...</div>;
+    return <div className="text-xs font-mono text-inkDim py-4">Loading Subject Rights requests...</div>;
   }
 
   const pendingRequests = requests.filter((r) => r.status === "pending_approval");
@@ -117,10 +117,10 @@ export default function DataRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="text-xl font-semibold text-white">Subject Rights Requests (GDPR / CCPA)</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Subject Rights Requests (GDPR / CCPA)</h1>
+          <p className="mt-1 text-xs text-inkDim">
             Process customer data export and hard erasure requests with two-step admin authorization and immutable audit logging.
           </p>
         </div>
@@ -128,75 +128,77 @@ export default function DataRequestsPage() {
         <div className="flex items-center gap-2">
           <Button
             onClick={() => setShowModal(true)}
-            className="h-8 text-xs bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 font-mono shadow-sm"
+            variant="primary"
+            className="h-8 text-xs flex items-center gap-1.5 font-mono"
           >
             <Plus size={14} /> New Subject Rights Request
           </Button>
 
           <Button
             onClick={() => void loadData()}
-            className="h-8 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1.5"
+            variant="outline"
+            className="h-8 text-xs flex items-center gap-1.5 font-mono"
           >
             <RefreshCw size={13} /> Refresh
           </Button>
         </div>
       </div>
 
-      {/* Summary KPI Cards */}
-      <div className="grid gap-3 sm:grid-cols-4">
-        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
+      {/* Summary KPI Strip */}
+      <div className="grid border border-border bg-surface sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border">
+        <div className="p-4 space-y-1">
+          <div className="flex items-center justify-between text-inkDim text-xs font-mono">
             <span>PENDING APPROVALS</span>
-            <Clock size={15} className="text-amber-400" />
+            <Clock size={15} className="text-warn" />
           </div>
-          <p className="text-2xl font-bold text-amber-400">{pendingRequests.length}</p>
-          <span className="text-[10px] text-slate-500">Requires 2-step admin confirmation</span>
-        </Card>
+          <p className="text-2xl font-bold font-mono text-warn">{pendingRequests.length}</p>
+          <span className="text-[10px] text-inkFaint font-mono">Requires 2-step admin authorization</span>
+        </div>
 
-        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
+        <div className="p-4 space-y-1">
+          <div className="flex items-center justify-between text-inkDim text-xs font-mono">
             <span>COMPLETED ERASURES</span>
-            <CheckCircle2 size={15} className="text-emerald-400" />
+            <CheckCircle2 size={15} className="text-good" />
           </div>
-          <p className="text-2xl font-bold text-white">{historicalRequests.filter((r) => r.status === "completed").length}</p>
-          <span className="text-[10px] text-slate-500">Hard-deleted across ClickHouse & Postgres</span>
-        </Card>
+          <p className="text-2xl font-bold font-mono text-ink">{historicalRequests.filter((r) => r.status === "completed").length}</p>
+          <span className="text-[10px] text-inkFaint font-mono">Purged across ClickHouse & Postgres</span>
+        </div>
 
-        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
+        <div className="p-4 space-y-1">
+          <div className="flex items-center justify-between text-inkDim text-xs font-mono">
             <span>PURGED RECORDS</span>
-            <Trash2 size={15} className="text-rose-400" />
+            <Trash2 size={15} className="text-bad" />
           </div>
-          <p className="text-2xl font-bold text-rose-400 font-mono">{totalDeletedSpans + totalDeletedPii}</p>
-          <span className="text-[10px] text-slate-500">{totalDeletedSpans} spans, {totalDeletedPii} PII mappings</span>
-        </Card>
+          <p className="text-2xl font-bold text-bad font-mono">{totalDeletedSpans + totalDeletedPii}</p>
+          <span className="text-[10px] text-inkFaint font-mono">{totalDeletedSpans} spans, {totalDeletedPii} PII mappings</span>
+        </div>
 
-        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
-          <div className="flex items-center justify-between text-slate-400 text-xs font-mono">
+        <div className="p-4 space-y-1">
+          <div className="flex items-center justify-between text-inkDim text-xs font-mono">
             <span>SLA COMPLIANCE</span>
-            <ShieldCheck size={15} className="text-blue-400" />
+            <ShieldCheck size={15} className="text-accent" />
           </div>
-          <p className="text-2xl font-bold text-emerald-400">100%</p>
-          <span className="text-[10px] text-slate-500">Processed within GDPR 30-day window</span>
-        </Card>
+          <p className="text-2xl font-bold font-mono text-good">100%</p>
+          <span className="text-[10px] text-inkFaint font-mono">Within statutory 30-day window</span>
+        </div>
       </div>
 
       {/* Pending Approvals Queue (Two-Step Safety Gate) */}
-      <Card className="border-amber-900/50 bg-amber-950/10 p-6 space-y-4">
-        <div className="flex items-center justify-between border-b border-amber-900/40 pb-3">
+      <Card className="border border-border bg-surface p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2">
-            <ShieldAlert size={18} className="text-amber-400" />
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+            <ShieldAlert size={18} className="text-warn" />
+            <h2 className="text-xs font-bold text-ink uppercase tracking-wider">
               Pending Admin Authorization Queue ({pendingRequests.length})
             </h2>
           </div>
-          <Badge className="bg-amber-950 text-amber-300 border-amber-800 text-[10px] font-mono">
+          <Badge variant="warn" className="text-[10px] font-mono">
             TWO-STEP SAFETY GATE
           </Badge>
         </div>
 
         {pendingRequests.length === 0 ? (
-          <div className="text-xs text-slate-400 py-4 text-center font-mono">
+          <div className="text-xs text-inkDim py-6 text-center font-mono">
             No pending subject rights requests awaiting admin approval.
           </div>
         ) : (
@@ -204,66 +206,68 @@ export default function DataRequestsPage() {
             {pendingRequests.map((req) => (
               <div
                 key={req.id}
-                className="rounded-lg border border-amber-900/40 bg-slate-950 p-4 text-xs space-y-3 relative"
+                className="border border-border bg-paper p-4 text-xs space-y-3"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-900 pb-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
                   <div className="flex items-center gap-3">
-                    <span className="font-mono font-bold text-amber-400">Request #{req.id}</span>
-                    <Badge className="bg-amber-950 text-amber-300 border-amber-800 font-mono text-[10px] uppercase">
+                    <span className="font-mono font-bold text-accent">Request #{req.id}</span>
+                    <Badge variant="secondary" className="font-mono text-[10px] uppercase">
                       {req.request_type}
                     </Badge>
-                    <span className="font-mono text-white font-semibold">{req.end_user_id}</span>
+                    <span className="font-mono text-ink font-semibold">{req.end_user_id}</span>
                   </div>
 
-                  <span className="text-[11px] text-slate-500 font-mono">
+                  <span className="text-[11px] text-inkDim font-mono">
                     Requested: {new Date(req.created_at).toLocaleString()}
                   </span>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-3 text-xs font-mono">
                   <div>
-                    <span className="text-[10px] text-slate-500 uppercase">Spans Found in ClickHouse</span>
-                    <p className="text-white font-bold mt-0.5">{req.spans_count} execution spans</p>
+                    <span className="text-[10px] text-inkDim uppercase">Spans in ClickHouse</span>
+                    <p className="text-ink font-bold mt-0.5">{req.spans_count} execution spans</p>
                   </div>
 
                   <div>
-                    <span className="text-[10px] text-slate-500 uppercase">PII Vault Mappings</span>
-                    <p className="text-white font-bold mt-0.5">{req.pii_records_count} encrypted tokens</p>
+                    <span className="text-[10px] text-inkDim uppercase">PII Vault Records</span>
+                    <p className="text-ink font-bold mt-0.5">{req.pii_records_count} encrypted tokens</p>
                   </div>
 
                   <div>
-                    <span className="text-[10px] text-slate-500 uppercase">Pre-Deletion Archive</span>
+                    <span className="text-[10px] text-inkDim uppercase">Pre-Deletion Archive</span>
                     {req.export_archive_url ? (
                       <a
                         href={req.export_archive_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-blue-400 hover:underline flex items-center gap-1 mt-0.5"
+                        className="text-accent hover:underline flex items-center gap-1 mt-0.5"
                       >
                         <Download size={12} /> Download JSON Bundle
                       </a>
                     ) : (
-                      <span className="text-slate-500">Generating...</span>
+                      <span className="text-inkDim">Generating...</span>
                     )}
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-slate-900 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[11px] text-slate-400">
-                    Requested by <strong className="text-slate-200">{req.requested_by}</strong>
+                <div className="pt-2 border-t border-border flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] text-inkDim">
+                    Requested by <strong className="text-ink">{req.requested_by}</strong>
                   </span>
 
                   <div className="flex items-center gap-2">
                     <Button
                       onClick={() => void handleReject(req.id)}
-                      className="h-7 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono"
+                      variant="outline"
+                      className="h-7 text-xs font-mono"
                     >
                       Reject Request
                     </Button>
 
                     <Button
                       onClick={() => setSelectedRequestForApproval(req)}
-                      className="h-7 text-xs bg-rose-600 hover:bg-rose-500 text-white font-mono flex items-center gap-1"
+                      variant="destructive"
+                      className="h-7 text-xs font-mono flex items-center gap-1"
                     >
                       <Trash2 size={12} /> Authorize & Hard Delete
                     </Button>
@@ -276,19 +280,19 @@ export default function DataRequestsPage() {
       </Card>
 
       {/* Historical Ledger Table */}
-      <Card className="border-slate-800 bg-slate-900/40 p-6 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h2 className="text-sm font-bold text-white flex items-center gap-2">
-            <FileSpreadsheet size={16} className="text-blue-400" /> Completed & Historical Requests ({historicalRequests.length})
+      <Card className="border border-border bg-surface p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-border pb-3">
+          <h2 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-2">
+            <FileSpreadsheet size={16} className="text-accent" /> Completed & Historical Requests ({historicalRequests.length})
           </h2>
-          <Link href="/settings/audit-log" className="text-xs text-blue-400 hover:underline flex items-center gap-1 font-mono">
+          <Link href="/settings/audit-log" className="text-xs text-accent hover:underline flex items-center gap-1 font-mono">
             Audit Log Ledger <ExternalLink size={12} />
           </Link>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="border-b border-slate-800 text-slate-400 font-mono text-[11px]">
+            <thead className="border-b border-border text-inkDim font-mono text-[11px] bg-paper">
               <tr>
                 <th className="py-2.5 px-3">REQ ID</th>
                 <th className="py-2.5 px-3">TYPE</th>
@@ -299,28 +303,22 @@ export default function DataRequestsPage() {
                 <th className="py-2.5 px-3">COMPLETED AT</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 font-mono">
+            <tbody className="divide-y divide-border font-mono">
               {historicalRequests.map((req) => (
-                <tr key={req.id} className="hover:bg-slate-900/50">
-                  <td className="py-2.5 px-3 text-slate-400">#{req.id}</td>
-                  <td className="py-2.5 px-3 uppercase text-blue-400">{req.request_type}</td>
-                  <td className="py-2.5 px-3 font-semibold text-white">{req.end_user_id}</td>
-                  <td className="py-2.5 px-3 text-rose-400">
+                <tr key={req.id} className="hover:bg-paper transition-colors">
+                  <td className="py-2.5 px-3 text-inkDim">#{req.id}</td>
+                  <td className="py-2.5 px-3 uppercase text-accent font-semibold">{req.request_type}</td>
+                  <td className="py-2.5 px-3 font-semibold text-ink">{req.end_user_id}</td>
+                  <td className="py-2.5 px-3 text-bad">
                     {req.deleted_spans_count + req.deleted_pii_count} records ({req.deleted_spans_count} spans, {req.deleted_pii_count} PII)
                   </td>
-                  <td className="py-2.5 px-3 text-slate-300">{req.approved_by || "System"}</td>
+                  <td className="py-2.5 px-3 text-inkDim">{req.approved_by || "System"}</td>
                   <td className="py-2.5 px-3">
-                    <Badge
-                      className={
-                        req.status === "completed"
-                          ? "bg-emerald-950 text-emerald-300 border-emerald-800 text-[10px]"
-                          : "bg-red-950 text-red-300 border-red-800 text-[10px]"
-                      }
-                    >
+                    <Badge variant={req.status === "completed" ? "good" : "bad"} className="text-[10px]">
                       {req.status.toUpperCase()}
                     </Badge>
                   </td>
-                  <td className="py-2.5 px-3 text-slate-400">
+                  <td className="py-2.5 px-3 text-inkDim">
                     {req.completed_at ? new Date(req.completed_at).toLocaleString() : "-"}
                   </td>
                 </tr>
@@ -332,28 +330,28 @@ export default function DataRequestsPage() {
 
       {/* New Request Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-950 p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <UserX size={16} className="text-blue-400" /> New Subject Rights Request
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4">
+          <div className="w-full max-w-md border border-border bg-surface p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h3 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-2">
+                <UserX size={16} className="text-accent" /> New Subject Rights Request
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowModal(false)} className="text-inkDim hover:text-ink">
                 <XCircle size={16} />
               </button>
             </div>
 
             <form onSubmit={(e) => void handleCreateRequest(e)} className="space-y-4 text-xs">
               <div>
-                <label className="text-[11px] text-slate-400 uppercase font-semibold">Request Type</label>
+                <label className="text-[11px] text-inkDim uppercase font-mono font-semibold">Request Type</label>
                 <div className="grid grid-cols-2 gap-2 mt-1">
                   <button
                     type="button"
                     onClick={() => setRequestTypeInput("erasure")}
-                    className={`p-2.5 rounded border text-xs font-mono font-semibold ${
+                    className={`p-2.5 border text-xs font-mono font-semibold transition-colors ${
                       requestTypeInput === "erasure"
-                        ? "bg-rose-950/40 border-rose-600 text-rose-300"
-                        : "bg-slate-900 border-slate-800 text-slate-400"
+                        ? "border-bad bg-bad text-paper"
+                        : "border-border bg-surface text-ink hover:bg-paper"
                     }`}
                   >
                     Right to Erasure (Delete)
@@ -361,10 +359,10 @@ export default function DataRequestsPage() {
                   <button
                     type="button"
                     onClick={() => setRequestTypeInput("export")}
-                    className={`p-2.5 rounded border text-xs font-mono font-semibold ${
+                    className={`p-2.5 border text-xs font-mono font-semibold transition-colors ${
                       requestTypeInput === "export"
-                        ? "bg-blue-950/40 border-blue-600 text-blue-300"
-                        : "bg-slate-900 border-slate-800 text-slate-400"
+                        ? "border-accent bg-accent text-paper"
+                        : "border-border bg-surface text-ink hover:bg-paper"
                     }`}
                   >
                     Right to Access (Export)
@@ -373,32 +371,34 @@ export default function DataRequestsPage() {
               </div>
 
               <div>
-                <label className="text-[11px] text-slate-400 uppercase font-semibold">Customer / End User ID</label>
+                <label className="text-[11px] text-inkDim uppercase font-mono font-semibold">Customer / End User ID</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. cust_9921 or user_uuid"
                   value={endUserIdInput}
                   onChange={(e) => setEndUserIdInput(e.target.value)}
-                  className="w-full mt-1 rounded bg-slate-900 border border-slate-800 p-2.5 font-mono text-white text-xs"
+                  className="w-full mt-1 border border-border bg-surface p-2.5 font-mono text-ink placeholder-inkFaint focus:border-ink focus:outline-none text-xs"
                 />
-                <span className="text-[10px] text-slate-500 mt-1 block">
+                <span className="text-[10px] text-inkDim mt-1 block font-mono">
                   Queries ClickHouse and PostgreSQL for all spans and PII tokens matching this identifier.
                 </span>
               </div>
 
-              <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+              <div className="pt-3 border-t border-border flex justify-end gap-2">
                 <Button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="h-8 text-xs bg-slate-800 text-slate-300"
+                  variant="outline"
+                  className="h-8 text-xs"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="h-8 text-xs bg-blue-600 hover:bg-blue-500 text-white font-mono"
+                  variant="primary"
+                  className="h-8 text-xs font-mono"
                 >
                   {submitting ? "Submitting..." : "Create Request"}
                 </Button>
@@ -410,53 +410,54 @@ export default function DataRequestsPage() {
 
       {/* Two-Step Deletion Confirmation Modal */}
       {selectedRequestForApproval && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-lg rounded-xl border border-rose-900/60 bg-slate-950 p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-3 border-b border-rose-900/40 pb-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-950 border border-rose-800 text-rose-400">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4">
+          <div className="w-full max-w-lg border border-bad bg-surface p-6 space-y-4">
+            <div className="flex items-center gap-3 border-b border-border pb-3">
+              <div className="flex h-10 w-10 items-center justify-center border border-bad bg-bad/10 text-bad">
                 <Trash2 size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">Permanent Data Erasure Confirmation</h3>
-                <p className="text-xs text-rose-300">Step 2: Admin Confirmation Safety Gate</p>
+                <h3 className="text-sm font-bold text-ink">Permanent Data Erasure Confirmation</h3>
+                <p className="text-xs text-bad font-mono">Step 2: Admin Confirmation Safety Gate</p>
               </div>
             </div>
 
-            <div className="rounded-lg bg-rose-950/20 border border-rose-900/40 p-3 text-xs text-slate-300 space-y-2 font-mono">
+            <div className="bg-paper border border-border p-3 text-xs text-ink space-y-2 font-mono">
               <p>
                 You are about to <strong>permanently hard-delete</strong>:
               </p>
-              <ul className="list-disc list-inside text-rose-300 space-y-1">
+              <ul className="list-disc list-inside text-bad space-y-1">
                 <li>{selectedRequestForApproval.spans_count} trace spans in ClickHouse</li>
                 <li>{selectedRequestForApproval.pii_records_count} encrypted PII mappings in PostgreSQL</li>
-                <li>Customer ID: <span className="text-white font-bold">{selectedRequestForApproval.end_user_id}</span></li>
+                <li>Customer ID: <span className="text-ink font-bold">{selectedRequestForApproval.end_user_id}</span></li>
               </ul>
-              <p className="text-[11px] text-slate-400 pt-1">
-                This action is non-reversible. The erasure action and metrics will be permanently recorded in the tamper-evident audit log without retaining customer data.
+              <p className="text-[11px] text-inkDim pt-1">
+                This action is non-reversible. The erasure action will be permanently recorded in the tamper-evident audit log without retaining customer data.
               </p>
             </div>
 
             <div className="space-y-2 text-xs">
-              <label className="text-[11px] text-slate-400 uppercase font-semibold">
-                Type <strong className="text-white font-mono">CONFIRM</strong> to authorize hard-deletion:
+              <label className="text-[11px] text-inkDim uppercase font-mono font-semibold">
+                Type <strong className="text-ink font-mono">CONFIRM</strong> to authorize hard-deletion:
               </label>
               <input
                 type="text"
                 value={confirmInput}
                 onChange={(e) => setConfirmInput(e.target.value)}
                 placeholder="CONFIRM"
-                className="w-full rounded bg-slate-900 border border-slate-800 p-2.5 font-mono text-white text-xs"
+                className="w-full border border-border bg-surface p-2.5 font-mono text-ink placeholder-inkFaint focus:border-ink focus:outline-none text-xs"
               />
             </div>
 
-            <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+            <div className="pt-3 border-t border-border flex justify-end gap-2">
               <Button
                 type="button"
                 onClick={() => {
                   setSelectedRequestForApproval(null);
                   setConfirmInput("");
                 }}
-                className="h-8 text-xs bg-slate-800 text-slate-300"
+                variant="outline"
+                className="h-8 text-xs"
               >
                 Cancel
               </Button>
@@ -464,7 +465,8 @@ export default function DataRequestsPage() {
                 type="button"
                 disabled={confirmInput.trim() !== "CONFIRM" || approving}
                 onClick={() => void handleConfirmApprove()}
-                className="h-8 text-xs bg-rose-600 hover:bg-rose-500 text-white font-mono flex items-center gap-1.5"
+                variant="destructive"
+                className="h-8 text-xs font-mono flex items-center gap-1.5"
               >
                 <Trash2 size={13} /> {approving ? "Purging Records..." : "Execute Permanent Erasure"}
               </Button>

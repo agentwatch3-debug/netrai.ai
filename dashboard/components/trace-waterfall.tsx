@@ -177,7 +177,7 @@ export function TraceWaterfall({ traceId }: { traceId: string }) {
                   <Button
                     onClick={() => void submitHumanFeedback(span.span_id, 1.0)}
                     className={`h-7 px-2 text-xs flex items-center gap-1 border ${
-                      currentVote === 1.0 ? "border-good bg-good text-white" : "border-border bg-surface text-ink hover:bg-paper"
+                      currentVote === 1.0 ? "border-good bg-good text-paper" : "border-border bg-surface text-ink hover:bg-paper"
                     }`}
                   >
                     <ThumbsUp size={11} /> Good
@@ -185,7 +185,7 @@ export function TraceWaterfall({ traceId }: { traceId: string }) {
                   <Button
                     onClick={() => void submitHumanFeedback(span.span_id, 0.0)}
                     className={`h-7 px-2 text-xs flex items-center gap-1 border ${
-                      currentVote === 0.0 ? "border-bad bg-bad text-white" : "border-border bg-surface text-ink hover:bg-paper"
+                      currentVote === 0.0 ? "border-bad bg-bad text-paper" : "border-border bg-surface text-ink hover:bg-paper"
                     }`}
                   >
                     <ThumbsDown size={11} /> Bad

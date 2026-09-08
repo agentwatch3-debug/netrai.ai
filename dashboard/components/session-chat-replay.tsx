@@ -54,16 +54,16 @@ export function SessionChatReplay({ sessionId }: { sessionId: string }) {
   }, [sessionId]);
 
   if (loading) {
-    return <div className="text-sm text-slate-400">Loading conversation thread replay...</div>;
+    return <div className="text-xs font-mono text-inkDim py-4">Loading conversation thread replay...</div>;
   }
 
   if (!session || !session.session_id) {
     return (
       <div className="space-y-4">
-        <Link href="/sessions" className="text-xs text-blue-400 hover:underline flex items-center gap-1">
+        <Link href="/sessions" className="text-xs text-accent hover:underline flex items-center gap-1 font-mono">
           <ArrowLeft size={14} /> Back to Sessions
         </Link>
-        <p className="text-slate-400 text-sm">Session thread not found.</p>
+        <p className="text-inkDim text-xs font-mono">Session thread not found.</p>
       </div>
     );
   }
@@ -73,32 +73,32 @@ export function SessionChatReplay({ sessionId }: { sessionId: string }) {
   return (
     <div className="space-y-6">
       {/* Session Header Card */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-4 border border-border bg-surface p-5">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Link href="/sessions" className="text-slate-400 hover:text-white transition-colors">
+            <Link href="/sessions" className="text-inkDim hover:text-ink transition-colors">
               <ArrowLeft size={16} />
             </Link>
-            <h1 className="text-lg font-bold text-white font-mono">{session.session_id}</h1>
-            <Badge className="bg-blue-950 text-blue-300 font-mono text-[10px]">
+            <h1 className="text-base font-bold text-ink font-mono">{session.session_id}</h1>
+            <Badge variant="secondary" className="font-mono text-[10px]">
               {turns.length} Turns
             </Badge>
           </div>
-          <div className="flex items-center gap-3 text-xs text-slate-400 font-mono pl-6">
-            <span>User: <strong className="text-slate-200">{session.user_id || "anonymous"}</strong></span>
+          <div className="flex items-center gap-3 text-xs text-inkDim font-mono pl-6">
+            <span>User: <strong className="text-ink">{session.user_id || "anonymous"}</strong></span>
             <span>·</span>
-            <span>Agent: <strong className="text-slate-200">{session.agent_id || "agent"}</strong></span>
+            <span>Agent: <strong className="text-ink">{session.agent_id || "agent"}</strong></span>
           </div>
         </div>
 
         <div className="flex items-center gap-4 text-xs font-mono">
-          <div className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-slate-300">
-            <span className="text-slate-500 text-[10px] uppercase block">Total Cost</span>
-            <span className="text-emerald-400 font-bold">${(session.total_cost || 0).toFixed(4)}</span>
+          <div className="border border-border bg-paper px-3 py-1.5 text-ink">
+            <span className="text-inkDim text-[10px] uppercase block">Total Cost</span>
+            <span className="text-good font-bold">${(session.total_cost || 0).toFixed(4)}</span>
           </div>
-          <div className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-slate-300">
-            <span className="text-slate-500 text-[10px] uppercase block">Total Tokens</span>
-            <span className="text-white font-bold">{(session.total_tokens || 0).toLocaleString()}</span>
+          <div className="border border-border bg-paper px-3 py-1.5 text-ink">
+            <span className="text-inkDim text-[10px] uppercase block">Total Tokens</span>
+            <span className="text-ink font-bold">{(session.total_tokens || 0).toLocaleString()}</span>
           </div>
         </div>
       </div>
@@ -106,12 +106,12 @@ export function SessionChatReplay({ sessionId }: { sessionId: string }) {
       {/* Main Split: Chat Bubbles Replay vs Turn Telemetry Inspector */}
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Left 7 cols: Interactive Conversation Timeline */}
-        <div className="space-y-6 lg:col-span-7">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+        <div className="space-y-4 lg:col-span-7">
+          <span className="text-[11px] font-mono font-bold text-inkDim uppercase tracking-wider block pb-1 border-b border-border">
             Multi-Turn Conversation Thread
           </span>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {turns.map((turn) => {
               const isSelected = activeTurn?.turn_index === turn.turn_index;
               const toolCalls = turn.tool_calls || [];
@@ -120,37 +120,37 @@ export function SessionChatReplay({ sessionId }: { sessionId: string }) {
                 <div
                   key={turn.turn_index}
                   onClick={() => setActiveTurn(turn)}
-                  className={`cursor-pointer rounded-xl border p-4 transition-all space-y-4 ${
+                  className={`cursor-pointer border p-4 transition-colors space-y-4 ${
                     isSelected
-                      ? "border-blue-500/80 bg-slate-900/80 shadow-lg shadow-blue-950/20"
-                      : "border-slate-800/80 bg-slate-900/30 hover:border-slate-700"
+                      ? "border-ink bg-surface"
+                      : "border-border bg-surface hover:border-borderStrong hover:bg-paper"
                   }`}
                 >
                   {/* Turn Header */}
-                  <div className="flex items-center justify-between border-b border-slate-800/60 pb-2 text-xs">
+                  <div className="flex items-center justify-between border-b border-border pb-2 text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-white font-mono">Turn #{turn.turn_index}</span>
+                      <span className="font-bold text-ink font-mono">Turn #{turn.turn_index}</span>
                       <Link
                         href={`/traces/${turn.trace_id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="text-[10px] text-blue-400 font-mono hover:underline"
+                        className="text-[10px] text-accent font-mono hover:underline"
                       >
                         {turn.trace_id}
                       </Link>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                    <div className="flex items-center gap-2 text-[10px] text-inkDim font-mono">
                       <span>{turn.latency_ms} ms</span>
                       <span>·</span>
-                      <span>${turn.cost_usd.toFixed(4)}</span>
+                      <span className="font-bold text-good">${turn.cost_usd.toFixed(4)}</span>
                     </div>
                   </div>
 
                   {/* User Message Bubble */}
                   <div className="flex items-start gap-3">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center border border-border bg-paper text-ink">
                       <User size={14} />
                     </div>
-                    <div className="rounded-2xl rounded-tl-sm bg-blue-600/20 border border-blue-500/30 p-3 text-xs text-slate-100 max-w-[88%]">
+                    <div className="border border-border bg-paper p-3 text-xs text-ink max-w-[88%] font-sans">
                       {turn.user_message}
                     </div>
                   </div>
@@ -159,12 +159,12 @@ export function SessionChatReplay({ sessionId }: { sessionId: string }) {
                   {turn.tool_calls.length > 0 && (
                     <div className="pl-10 space-y-2">
                       {turn.tool_calls.map((tool, idx) => (
-                        <div key={idx} className="rounded-lg border border-purple-900/50 bg-purple-950/20 p-2.5 text-xs space-y-1">
-                          <div className="flex items-center gap-1.5 font-mono text-[11px] font-semibold text-purple-300">
-                            <Wrench size={12} className="text-purple-400" />
+                        <div key={idx} className="border border-border bg-accentSoft p-2.5 text-xs space-y-1">
+                          <div className="flex items-center gap-1.5 font-mono text-[11px] font-semibold text-accent">
+                            <Wrench size={12} />
                             <span>Tool Call: {tool.name}</span>
                           </div>
-                          <pre className="overflow-auto font-mono text-[10px] text-purple-200 bg-slate-950/60 p-1.5 rounded">
+                          <pre className="overflow-auto font-mono text-[10px] text-ink bg-surface p-1.5 border border-border">
                             {JSON.stringify(tool.output, null, 2)}
                           </pre>
                         </div>
@@ -174,10 +174,10 @@ export function SessionChatReplay({ sessionId }: { sessionId: string }) {
 
                   {/* Assistant Response Bubble */}
                   <div className="flex items-start gap-3">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-emerald-400 border border-slate-700">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center border border-ink bg-ink text-paper">
                       <Bot size={14} />
                     </div>
-                    <div className="rounded-2xl rounded-tl-sm bg-slate-950 border border-slate-800 p-3 text-xs text-slate-200 max-w-[88%]">
+                    <div className="border border-border bg-surface p-3 text-xs text-ink max-w-[88%] font-sans">
                       {turn.assistant_message}
                     </div>
                   </div>
@@ -189,64 +189,64 @@ export function SessionChatReplay({ sessionId }: { sessionId: string }) {
 
         {/* Right 5 cols: Selected Turn Telemetry Inspector */}
         <div className="space-y-4 lg:col-span-5">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+          <span className="text-[11px] font-mono font-bold text-inkDim uppercase tracking-wider block pb-1 border-b border-border">
             Turn Telemetry & Diagnostics
           </span>
 
           {activeTurn ? (
-            <Card className="sticky top-6 border-slate-800 bg-slate-900/50 p-5 space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <Card className="sticky top-6 border border-border bg-surface p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="space-y-0.5">
-                  <h3 className="text-sm font-bold text-white font-mono">Turn #{activeTurn.turn_index} Details</h3>
-                  <p className="text-[11px] text-slate-400 font-mono">Trace ID: {activeTurn.trace_id}</p>
+                  <h3 className="text-xs font-bold text-ink uppercase tracking-wider font-mono">Turn #{activeTurn.turn_index} Details</h3>
+                  <p className="text-[11px] text-inkDim font-mono">Trace ID: {activeTurn.trace_id}</p>
                 </div>
                 <Link href={`/traces/${activeTurn.trace_id}`}>
-                  <Button className="h-7 px-2.5 bg-blue-600 hover:bg-blue-500 text-xs">
+                  <Button variant="primary" className="h-7 px-2.5 text-xs font-mono">
                     View Waterfall
                   </Button>
                 </Link>
               </div>
 
               {/* Metrics Grid */}
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="rounded-lg border border-slate-800 bg-slate-950 p-2.5">
-                  <span className="text-[10px] text-slate-400 block uppercase">Tokens</span>
-                  <span className="text-sm font-bold text-white font-mono">{activeTurn.tokens.toLocaleString()}</span>
+              <div className="grid grid-cols-3 gap-2 text-center font-mono">
+                <div className="border border-border bg-paper p-2">
+                  <span className="text-[10px] text-inkDim block uppercase">Tokens</span>
+                  <span className="text-xs font-bold text-ink">{activeTurn.tokens.toLocaleString()}</span>
                 </div>
-                <div className="rounded-lg border border-slate-800 bg-slate-950 p-2.5">
-                  <span className="text-[10px] text-slate-400 block uppercase">Turn Cost</span>
-                  <span className="text-sm font-bold text-emerald-400 font-mono">${activeTurn.cost_usd.toFixed(4)}</span>
+                <div className="border border-border bg-paper p-2">
+                  <span className="text-[10px] text-inkDim block uppercase">Turn Cost</span>
+                  <span className="text-xs font-bold text-good">${activeTurn.cost_usd.toFixed(4)}</span>
                 </div>
-                <div className="rounded-lg border border-slate-800 bg-slate-950 p-2.5">
-                  <span className="text-[10px] text-slate-400 block uppercase">Latency</span>
-                  <span className="text-sm font-bold text-blue-400 font-mono">{activeTurn.latency_ms} ms</span>
+                <div className="border border-border bg-paper p-2">
+                  <span className="text-[10px] text-inkDim block uppercase">Latency</span>
+                  <span className="text-xs font-bold text-ink">{activeTurn.latency_ms} ms</span>
                 </div>
               </div>
 
               {/* Tool Execution Summary */}
               <div className="space-y-2">
-                <span className="text-xs font-semibold text-slate-300">Tool Calls In Turn ({(activeTurn.tool_calls || []).length})</span>
+                <span className="text-xs font-bold text-ink uppercase font-mono">Tool Calls In Turn ({(activeTurn.tool_calls || []).length})</span>
                 {(activeTurn.tool_calls || []).length > 0 ? (
                   <div className="space-y-2">
                     {activeTurn.tool_calls.map((tool, idx) => (
-                      <div key={idx} className="rounded-lg border border-slate-800 bg-slate-950 p-2.5 space-y-1 text-xs">
-                        <div className="flex items-center justify-between font-mono font-medium text-slate-200 text-[11px]">
+                      <div key={idx} className="border border-border bg-paper p-2.5 space-y-1 text-xs font-mono">
+                        <div className="flex items-center justify-between font-bold text-ink text-[11px]">
                           <span>{tool.name}</span>
-                          <Badge className="bg-emerald-950 text-emerald-300 text-[9px]">Success</Badge>
+                          <Badge variant="good" className="text-[9px]">Success</Badge>
                         </div>
-                        <pre className="overflow-auto font-mono text-[10px] text-slate-400 bg-slate-900/60 p-2 rounded">
+                        <pre className="overflow-auto font-mono text-[10px] text-ink bg-surface p-2 border border-border">
                           {JSON.stringify(tool.input, null, 2)}
                         </pre>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 italic">No tools invoked in this turn (direct LLM completion).</p>
+                  <p className="text-xs text-inkDim italic font-mono">No tools invoked in this turn (direct LLM completion).</p>
                 )}
               </div>
             </Card>
           ) : (
-            <div className="rounded-lg border border-slate-800 bg-slate-900/20 p-8 text-center text-slate-400 text-xs">
+            <div className="border border-border bg-surface p-8 text-center text-inkDim text-xs font-mono">
               Select a conversation turn to inspect token breakdown and execution latency.
             </div>
           )}

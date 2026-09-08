@@ -10,10 +10,10 @@ export function Button({ className, variant = "default", size = "default", ...pr
   const variantClasses = {
     default: "border border-border bg-surface text-ink hover:bg-accentSoft hover:text-accent hover:border-borderStrong",
     primary: "border border-ink bg-ink text-paper hover:bg-ink/90",
-    accent: "border border-accent bg-accent text-white hover:bg-accent/90",
+    accent: "border border-accent bg-accent text-paper hover:bg-accent/90",
     outline: "border border-border bg-transparent text-ink hover:bg-paper hover:border-borderStrong",
     ghost: "border border-transparent bg-transparent text-inkDim hover:bg-paper hover:text-ink",
-    destructive: "border border-bad bg-bad text-white hover:bg-bad/90",
+    destructive: "border border-bad bg-bad text-paper hover:bg-bad/90",
   }[variant];
 
   const sizeClasses = {

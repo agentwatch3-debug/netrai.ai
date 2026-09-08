@@ -63,23 +63,21 @@ export default function MultiAgentGraphPage() {
       const res = await fetch(`/api/agents/graph?time_window=${timeWindow}`);
       if (res.ok) {
         const body = await res.json();
-        // Compute layout positions for nodes
         const rawNodes: AgentNode[] = body.nodes || [];
         const rawEdges: AgentEdge[] = body.edges || [];
 
-        // Fixed layout for clean presentation
         const positions: Record<string, { x: number; y: number }> = {
-          orchestrator_agent: { x: 120, y: 220 },
-          research_subagent: { x: 420, y: 100 },
-          code_reviewer: { x: 420, y: 220 },
-          sql_analyst: { x: 420, y: 340 },
-          compliance_guard: { x: 720, y: 100 },
+          orchestrator_agent: { x: 120, y: 200 },
+          research_subagent: { x: 400, y: 90 },
+          code_reviewer: { x: 400, y: 200 },
+          sql_analyst: { x: 400, y: 310 },
+          compliance_guard: { x: 680, y: 90 },
         };
 
         const positionedNodes = rawNodes.map((node, i) => {
           const pos = positions[node.id] || {
-            x: 200 + (i % 3) * 260,
-            y: 100 + Math.floor(i / 3) * 140,
+            x: 180 + (i % 3) * 240,
+            y: 90 + Math.floor(i / 3) * 120,
           };
           return { ...node, x: pos.x, y: pos.y };
         });
@@ -117,7 +115,7 @@ export default function MultiAgentGraphPage() {
   }
 
   if (loading && nodes.length === 0) {
-    return <div className="text-sm text-slate-400">Rendering multi-agent network topology graph...</div>;
+    return <div className="text-xs font-mono text-inkDim py-4">Rendering multi-agent network topology graph...</div>;
   }
 
   const totalCalls = nodes.reduce((acc, n) => acc + n.total_calls, 0);
@@ -130,22 +128,22 @@ export default function MultiAgentGraphPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="text-xl font-semibold text-white">Multi-Agent Network Topology Graph</h1>
-          <p className="text-sm text-slate-400">
-            Real-time visual hierarchy of agent-to-agent delegations, call velocities, latency, clarification rates, and guessing risks.
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Multi-Agent Network Topology Graph</h1>
+          <p className="mt-1 text-xs text-inkDim">
+            Visual hierarchy of agent-to-agent delegations, call velocities, latency, clarification rates, and guessing risks.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex rounded-lg bg-slate-900 border border-slate-800 p-0.5 text-xs">
+          <div className="flex border border-border bg-paper p-0.5 text-xs">
             {["1h", "24h", "7d"].map((w) => (
               <button
                 key={w}
                 onClick={() => setTimeWindow(w)}
-                className={`px-3 py-1 rounded-md font-mono ${
-                  timeWindow === w ? "bg-blue-600 text-white font-bold" : "text-slate-400 hover:text-white"
+                className={`px-3 py-1 font-mono transition-colors ${
+                  timeWindow === w ? "bg-ink text-paper font-bold" : "text-inkDim hover:text-ink"
                 }`}
               >
                 {w}
@@ -155,7 +153,8 @@ export default function MultiAgentGraphPage() {
 
           <Button
             onClick={() => void loadGraphData()}
-            className="h-8 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1.5"
+            variant="outline"
+            className="h-8 text-xs flex items-center gap-1.5 font-mono"
           >
             <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Refresh
           </Button>
@@ -163,60 +162,60 @@ export default function MultiAgentGraphPage() {
       </div>
 
       {/* Hero Stats */}
-      <div className="grid gap-4 sm:grid-cols-5">
-        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
-          <span className="text-[11px] text-slate-400 uppercase font-semibold">Active Agents</span>
-          <p className="text-2xl font-bold text-white font-mono">{nodes.length}</p>
-          <p className="text-[10px] text-slate-500">Autonomous interconnected units</p>
-        </Card>
+      <div className="grid border border-border bg-surface sm:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-border">
+        <div className="p-4 space-y-1">
+          <span className="text-[11px] text-inkDim uppercase font-mono font-semibold">Active Agents</span>
+          <p className="text-2xl font-bold text-ink font-mono">{nodes.length}</p>
+          <p className="text-[10px] text-inkFaint font-mono">Autonomous interconnected units</p>
+        </div>
 
-        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
-          <span className="text-[11px] text-slate-400 uppercase font-semibold">Delegated Invocations</span>
-          <p className="text-2xl font-bold text-blue-400 font-mono">{totalCalls.toLocaleString()}</p>
-          <p className="text-[10px] text-slate-500">Agent-to-agent remote calls</p>
-        </Card>
+        <div className="p-4 space-y-1">
+          <span className="text-[11px] text-inkDim uppercase font-mono font-semibold">Delegations</span>
+          <p className="text-2xl font-bold text-accent font-mono">{totalCalls.toLocaleString()}</p>
+          <p className="text-[10px] text-inkFaint font-mono">Agent-to-agent remote calls</p>
+        </div>
 
-        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
-          <span className="text-[11px] text-slate-400 uppercase font-semibold">System Error Rate</span>
-          <p className={`text-2xl font-bold font-mono ${overallErrorRate > 5 ? "text-red-400" : "text-emerald-400"}`}>
+        <div className="p-4 space-y-1">
+          <span className="text-[11px] text-inkDim uppercase font-mono font-semibold">Error Rate</span>
+          <p className={`text-2xl font-bold font-mono ${overallErrorRate > 5 ? "text-bad" : "text-good"}`}>
             {overallErrorRate.toFixed(2)}%
           </p>
-          <p className="text-[10px] text-slate-500">{totalErrors} failed delegate calls</p>
-        </Card>
+          <p className="text-[10px] text-inkFaint font-mono">{totalErrors} failed delegate calls</p>
+        </div>
 
-        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
-          <span className="text-[11px] text-slate-400 uppercase font-semibold">Total Mesh Cost</span>
-          <p className="text-2xl font-bold text-amber-400 font-mono">${totalCost.toFixed(2)}</p>
-          <p className="text-[10px] text-slate-500">Aggregated LLM token burn</p>
-        </Card>
+        <div className="p-4 space-y-1">
+          <span className="text-[11px] text-inkDim uppercase font-mono font-semibold">Total Mesh Cost</span>
+          <p className="text-2xl font-bold text-ink font-mono">${totalCost.toFixed(2)}</p>
+          <p className="text-[10px] text-inkFaint font-mono">Aggregated token burn</p>
+        </div>
 
-        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
-          <span className="text-[11px] text-slate-400 uppercase font-semibold">Clarification Rate</span>
-          <p className={`text-2xl font-bold font-mono ${overallClarificationRate > 0 ? "text-sky-400" : "text-rose-400"}`}>
+        <div className="p-4 space-y-1">
+          <span className="text-[11px] text-inkDim uppercase font-mono font-semibold">Clarification Rate</span>
+          <p className={`text-2xl font-bold font-mono ${overallClarificationRate > 0 ? "text-accent" : "text-bad"}`}>
             {overallClarificationRate.toFixed(2)}%
           </p>
-          <p className="text-[10px] text-slate-500">
-            {guessingRiskAgents.length > 0 ? `${guessingRiskAgents.length} guessing risk (0% rate)` : "Healthy clarification"}
+          <p className="text-[10px] text-inkFaint font-mono">
+            {guessingRiskAgents.length > 0 ? `${guessingRiskAgents.length} guessing risk (0%)` : "Healthy clarification"}
           </p>
-        </Card>
+        </div>
       </div>
 
       {/* Interactive Topology Graph Canvas */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2 border-slate-800 bg-slate-950 p-4 overflow-hidden relative min-h-[460px] flex flex-col justify-between">
-          <div className="flex items-center justify-between border-b border-slate-900 pb-3 mb-2">
+        <Card className="lg:col-span-2 border border-border bg-surface p-4 overflow-hidden relative min-h-[460px] flex flex-col justify-between">
+          <div className="flex items-center justify-between border-b border-border pb-3 mb-2">
             <div className="flex items-center gap-2">
-              <Network size={16} className="text-blue-400" />
-              <span className="text-xs font-semibold text-white">Delegation Mesh Canvas</span>
+              <Network size={16} className="text-accent" />
+              <span className="text-xs font-bold text-ink uppercase tracking-wider font-mono">Delegation Mesh Canvas</span>
             </div>
-            <div className="flex items-center gap-4 text-[10px] text-slate-400 font-mono">
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> &lt;1% Errors</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> 1-5% Errors</span>
-              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" /> &gt;5% Errors</span>
+            <div className="flex items-center gap-4 text-[10px] text-inkDim font-mono">
+              <span className="flex items-center gap-1"><span className="h-2 w-2 bg-good inline-block" /> &lt;1% Errors</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 bg-warn inline-block" /> 1-5% Errors</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 bg-bad inline-block" /> &gt;5% Errors</span>
             </div>
           </div>
 
-          <div className="relative w-full h-[380px] select-none">
+          <div className="relative w-full h-[380px] select-none bg-paper border border-border">
             <svg className="w-full h-full">
               <defs>
                 <marker
@@ -227,7 +226,7 @@ export default function MultiAgentGraphPage() {
                   refY="3"
                   orient="auto"
                 >
-                  <polygon points="0 0, 8 3, 0 6" fill="#3b82f6" />
+                  <polygon points="0 0, 8 3, 0 6" fill="#161616" />
                 </marker>
                 <marker
                   id="arrowhead-selected"
@@ -237,7 +236,7 @@ export default function MultiAgentGraphPage() {
                   refY="3"
                   orient="auto"
                 >
-                  <polygon points="0 0, 8 3, 0 6" fill="#38bdf8" />
+                  <polygon points="0 0, 8 3, 0 6" fill="#2B3A67" />
                 </marker>
               </defs>
 
@@ -253,7 +252,6 @@ export default function MultiAgentGraphPage() {
 
                 return (
                   <g key={edge.id} className="cursor-pointer" onClick={() => void handleSelectEdge(edge)}>
-                    {/* Invisible thick hover target */}
                     <line
                       x1={src.x}
                       y1={src.y}
@@ -262,36 +260,33 @@ export default function MultiAgentGraphPage() {
                       stroke="transparent"
                       strokeWidth={16}
                     />
-                    {/* Visible line */}
                     <line
                       x1={src.x}
                       y1={src.y}
                       x2={tgt.x}
                       y2={tgt.y}
-                      stroke={isSelected ? "#38bdf8" : edge.error_count > 10 ? "#f43f5e" : "#3b82f6"}
-                      strokeWidth={isSelected ? edge.stroke_width + 2 : edge.stroke_width}
+                      stroke={isSelected ? "#2B3A67" : edge.error_count > 10 ? "#8C3A32" : "#A7A498"}
+                      strokeWidth={isSelected ? edge.stroke_width + 1.5 : edge.stroke_width}
                       strokeDasharray={edge.error_count > 10 ? "4 2" : "none"}
                       markerEnd={isSelected ? "url(#arrowhead-selected)" : "url(#arrowhead)"}
-                      className="transition-all hover:stroke-sky-400"
                     />
-                    {/* Edge Latency Badge */}
                     <rect
                       x={midX - 28}
                       y={midY - 10}
                       width={56}
                       height={18}
-                      rx={4}
-                      fill="#090d16"
-                      stroke={isSelected ? "#38bdf8" : "#1e293b"}
+                      fill="#FFFFFF"
+                      stroke={isSelected ? "#2B3A67" : "#E4E2DC"}
                       strokeWidth={1}
                     />
                     <text
                       x={midX}
                       y={midY + 3}
                       textAnchor="middle"
-                      fill={isSelected ? "#38bdf8" : "#94a3b8"}
+                      fill={isSelected ? "#2B3A67" : "#6B6960"}
                       fontSize={9}
                       fontFamily="monospace"
+                      fontWeight="bold"
                     >
                       {edge.call_count} · {edge.avg_latency_ms}ms
                     </text>
@@ -305,10 +300,10 @@ export default function MultiAgentGraphPage() {
                 const isSelected = selectedNode?.id === node.id;
                 const strokeColor =
                   node.status_color === "rose"
-                    ? "#f43f5e"
+                    ? "#8C3A32"
                     : node.status_color === "amber"
-                    ? "#f59e0b"
-                    : "#10b981";
+                    ? "#8A6A2C"
+                    : "#3D6B4F";
 
                 return (
                   <g
@@ -319,47 +314,41 @@ export default function MultiAgentGraphPage() {
                       setSelectedEdge(null);
                     }}
                   >
-                    {/* Outer glow circle if selected */}
                     {isSelected && (
                       <circle
                         cx={node.x}
                         cy={node.y}
-                        r={34}
+                        r={30}
                         fill="none"
-                        stroke="#38bdf8"
+                        stroke="#161616"
                         strokeWidth={2}
                         strokeDasharray="3 3"
-                        className="animate-spin"
                       />
                     )}
-                    {/* Main Node Circle */}
                     <circle
                       cx={node.x}
                       cy={node.y}
-                      r={26}
-                      fill="#0f172a"
+                      r={24}
+                      fill="#FFFFFF"
                       stroke={strokeColor}
-                      strokeWidth={2.5}
-                      className="transition-transform hover:scale-105"
+                      strokeWidth={2}
                     />
-                    {/* Icon or Initials */}
                     <text
                       x={node.x}
                       y={node.y + 4}
                       textAnchor="middle"
-                      fill="#f8fafc"
-                      fontSize={11}
+                      fill="#161616"
+                      fontSize={10}
                       fontWeight="bold"
                       fontFamily="monospace"
                     >
                       {node.id.substring(0, 3).toUpperCase()}
                     </text>
-                    {/* Label below node */}
                     <text
                       x={node.x}
-                      y={node.y + 42}
+                      y={node.y + 38}
                       textAnchor="middle"
-                      fill="#e2e8f0"
+                      fill="#161616"
                       fontSize={11}
                       fontWeight="600"
                     >
@@ -367,9 +356,9 @@ export default function MultiAgentGraphPage() {
                     </text>
                     <text
                       x={node.x}
-                      y={node.y + 55}
+                      y={node.y + 50}
                       textAnchor="middle"
-                      fill="#64748b"
+                      fill="#6B6960"
                       fontSize={9}
                       fontFamily="monospace"
                     >
@@ -381,74 +370,66 @@ export default function MultiAgentGraphPage() {
             </svg>
           </div>
 
-          <div className="border-t border-slate-900 pt-2 text-[11px] text-slate-500 flex items-center justify-between">
-            <span>💡 Click any directed edge arrow to inspect filtered agent-to-agent traces.</span>
-            <span>Click any agent node to inspect its delegate performance.</span>
+          <div className="border-t border-border pt-2 text-[11px] text-inkDim font-mono flex items-center justify-between">
+            <span>💡 Click any directed edge to inspect filtered traces.</span>
+            <span>Click any agent node to inspect delegate performance.</span>
           </div>
         </Card>
 
         {/* Details Panel / Edge Trace Inspector */}
         <div className="space-y-4">
           {selectedEdge ? (
-            /* Selected Edge Inspector */
-            <Card className="border-blue-900/60 bg-blue-950/20 p-5 space-y-4">
-              <div className="flex items-center justify-between border-b border-blue-900/60 pb-3">
+            <Card className="border border-border bg-surface p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="space-y-0.5">
-                  <span className="text-[10px] text-blue-400 font-mono uppercase font-bold">Directed Relationship</span>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                    {selectedEdge.source} <ArrowRight size={13} className="text-blue-400" /> {selectedEdge.target}
+                  <span className="text-[10px] text-accent font-mono uppercase font-bold">Directed Relationship</span>
+                  <h3 className="text-sm font-bold text-ink font-mono flex items-center gap-1.5">
+                    {selectedEdge.source} <ArrowRight size={13} className="text-accent" /> {selectedEdge.target}
                   </h3>
                 </div>
-                <Badge className="bg-blue-950 text-blue-300 border-blue-800 text-[10px] font-mono">
+                <Badge variant="secondary" className="font-mono text-[10px]">
                   {selectedEdge.call_count} Calls
                 </Badge>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                <div className="rounded bg-slate-950/80 p-2 border border-slate-800">
-                  <span className="text-[10px] text-slate-500">Avg Latency</span>
-                  <p className="font-bold text-white">{selectedEdge.avg_latency_ms} ms</p>
+                <div className="border border-border bg-paper p-2">
+                  <span className="text-[10px] text-inkDim uppercase">Avg Latency</span>
+                  <p className="font-bold text-ink">{selectedEdge.avg_latency_ms} ms</p>
                 </div>
-                <div className="rounded bg-slate-950/80 p-2 border border-slate-800">
-                  <span className="text-[10px] text-slate-500">Errors</span>
-                  <p className={`font-bold ${selectedEdge.error_count > 0 ? "text-red-400" : "text-emerald-400"}`}>
+                <div className="border border-border bg-paper p-2">
+                  <span className="text-[10px] text-inkDim uppercase">Errors</span>
+                  <p className={`font-bold ${selectedEdge.error_count > 0 ? "text-bad" : "text-good"}`}>
                     {selectedEdge.error_count}
                   </p>
                 </div>
               </div>
 
-              {/* Filtered Trace List */}
-              <div className="space-y-2 pt-2 border-t border-slate-800">
-                <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+              <div className="space-y-2 pt-2 border-t border-border">
+                <span className="text-[11px] font-mono font-bold text-inkDim uppercase tracking-wider">
                   Delegation Traces ({traces.length})
                 </span>
 
                 {loadingTraces ? (
-                  <div className="text-xs text-slate-400 py-4 text-center">Loading traces...</div>
+                  <div className="text-xs font-mono text-inkDim py-4 text-center">Loading traces...</div>
                 ) : (
-                  <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1 font-mono">
                     {traces.map((t) => (
-                      <div key={t.span_id} className="rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs space-y-1">
+                      <div key={t.span_id} className="border border-border bg-paper p-2.5 text-xs space-y-1">
                         <div className="flex items-center justify-between">
-                          <Badge
-                            className={
-                              t.status === "error"
-                                ? "bg-red-950 text-red-300 border-red-800 text-[9px]"
-                                : "bg-emerald-950 text-emerald-300 border-emerald-800 text-[9px]"
-                            }
-                          >
+                          <Badge variant={t.status === "error" ? "bad" : "good"} className="text-[9px]">
                             {t.status.toUpperCase()}
                           </Badge>
-                          <span className="text-[10px] text-slate-500 font-mono">{t.latency_ms} ms</span>
+                          <span className="text-[10px] text-inkDim">{t.latency_ms} ms</span>
                         </div>
 
                         {t.error_message && (
-                          <p className="text-[11px] text-red-300 font-mono">{t.error_message}</p>
+                          <p className="text-[11px] text-bad">{t.error_message}</p>
                         )}
 
-                        <div className="flex items-center justify-between pt-1 border-t border-slate-900 text-[10px] font-mono text-slate-400">
+                        <div className="flex items-center justify-between pt-1 border-t border-border text-[10px] text-inkDim">
                           <span>${t.cost_usd.toFixed(4)}</span>
-                          <Link href={`/traces/${t.trace_id}`} className="text-blue-400 hover:underline flex items-center gap-0.5">
+                          <Link href={`/traces/${t.trace_id}`} className="text-accent hover:underline flex items-center gap-0.5">
                             Inspect Waterfall <ArrowUpRight size={10} />
                           </Link>
                         </div>
@@ -459,91 +440,90 @@ export default function MultiAgentGraphPage() {
               </div>
             </Card>
           ) : selectedNode ? (
-            /* Selected Node Inspector */
-            <Card className="border-slate-800 bg-slate-900/40 p-5 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <Card className="border border-border bg-surface p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-950 border border-blue-800/60 text-blue-400">
+                  <div className="flex h-8 w-8 items-center justify-center border border-border bg-paper text-accent">
                     <Bot size={16} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white">{selectedNode.label}</h3>
-                    <span className="font-mono text-[10px] text-slate-400">{selectedNode.id}</span>
+                    <h3 className="text-sm font-bold text-ink font-mono">{selectedNode.label}</h3>
+                    <span className="font-mono text-[10px] text-inkDim">{selectedNode.id}</span>
                   </div>
                 </div>
                 <Badge
-                  className={
+                  variant={
                     selectedNode.status_color === "rose"
-                      ? "bg-red-950 text-red-300 border-red-800 text-[10px]"
+                      ? "bad"
                       : selectedNode.status_color === "amber"
-                      ? "bg-amber-950 text-amber-300 border-amber-800 text-[10px]"
-                      : "bg-emerald-950 text-emerald-300 border-emerald-800 text-[10px]"
+                      ? "warn"
+                      : "good"
                   }
+                  className="text-[10px] font-mono"
                 >
                   {selectedNode.error_rate}% ERRORS
                 </Badge>
               </div>
 
               <div className="space-y-2 text-xs font-mono">
-                <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Total Invocations:</span>
-                  <span className="text-white font-bold">{selectedNode.total_calls.toLocaleString()}</span>
+                <div className="flex justify-between py-1 border-b border-border">
+                  <span className="text-inkDim">Total Invocations:</span>
+                  <span className="text-ink font-bold">{selectedNode.total_calls.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Avg Latency:</span>
-                  <span className="text-white font-bold">{selectedNode.avg_latency_ms} ms</span>
+                <div className="flex justify-between py-1 border-b border-border">
+                  <span className="text-inkDim">Avg Latency:</span>
+                  <span className="text-ink font-bold">{selectedNode.avg_latency_ms} ms</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Total Spent:</span>
-                  <span className="text-amber-400 font-bold">${selectedNode.total_cost_usd.toFixed(2)}</span>
+                <div className="flex justify-between py-1 border-b border-border">
+                  <span className="text-inkDim">Total Spent:</span>
+                  <span className="text-ink font-bold">${selectedNode.total_cost_usd.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Error Count:</span>
-                  <span className={selectedNode.error_count > 0 ? "text-red-400 font-bold" : "text-slate-400"}>
+                <div className="flex justify-between py-1 border-b border-border">
+                  <span className="text-inkDim">Error Count:</span>
+                  <span className={selectedNode.error_count > 0 ? "text-bad font-bold" : "text-inkDim"}>
                     {selectedNode.error_count}
                   </span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Clarification Rate:</span>
-                  <span className={`font-bold ${(selectedNode.clarification_rate ?? 0) > 0 ? "text-sky-400" : "text-rose-400"}`}>
+                <div className="flex justify-between py-1 border-b border-border">
+                  <span className="text-inkDim">Clarification Rate:</span>
+                  <span className={`font-bold ${(selectedNode.clarification_rate ?? 0) > 0 ? "text-accent" : "text-bad"}`}>
                     {(selectedNode.clarification_rate ?? 0).toFixed(2)}% ({selectedNode.clarification_count ?? 0} calls)
                   </span>
                 </div>
               </div>
 
-              {/* Guessing Risk Alert */}
               {(selectedNode.clarification_rate === 0 || selectedNode.guessing_risk) ? (
-                <div className="rounded-lg border border-rose-900/60 bg-rose-950/20 p-3 space-y-1.5 text-xs">
-                  <div className="flex items-center gap-1.5 text-rose-400 font-semibold font-mono">
+                <div className="border border-bad/40 bg-bad/5 p-3 space-y-1.5 text-xs font-mono">
+                  <div className="flex items-center gap-1.5 text-bad font-semibold">
                     <AlertTriangle size={13} />
                     <span>0% Clarification (Guessing Risk)</span>
                   </div>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                  <p className="text-[11px] text-ink leading-relaxed">
                     This agent has never requested clarification on ambiguous user queries. 0% clarification rate with non-zero error rate strongly signals blind guessing, driving expensive retry loops.
                   </p>
                 </div>
               ) : (
-                <div className="rounded-lg border border-sky-900/60 bg-sky-950/20 p-2.5 text-xs text-slate-300 flex items-center gap-2 font-mono text-[11px]">
-                  <CheckCircle2 size={13} className="text-sky-400 shrink-0" />
+                <div className="border border-good/40 bg-good/5 p-2.5 text-xs text-ink flex items-center gap-2 font-mono text-[11px]">
+                  <CheckCircle2 size={13} className="text-good shrink-0" />
                   <span>Intent threshold active: Agent requests clarification on low confidence.</span>
                 </div>
               )}
 
               <div className="space-y-2 pt-1">
-                <span className="text-[11px] font-semibold text-slate-400 uppercase">Connected Edges</span>
-                <div className="space-y-1 text-xs">
+                <span className="text-[11px] font-mono font-bold text-inkDim uppercase">Connected Edges</span>
+                <div className="space-y-1 text-xs font-mono">
                   {edges
                     .filter((e) => e.source === selectedNode.id || e.target === selectedNode.id)
                     .map((e) => (
                       <button
                         key={e.id}
                         onClick={() => void handleSelectEdge(e)}
-                        className="w-full text-left rounded bg-slate-950 border border-slate-800 p-2 hover:border-blue-500 transition-colors flex items-center justify-between"
+                        className="w-full text-left bg-paper border border-border p-2 hover:border-ink transition-colors flex items-center justify-between"
                       >
-                        <span className="font-mono text-[11px] text-slate-300">
+                        <span className="text-[11px] text-ink">
                           {e.source === selectedNode.id ? `Calls ➔ ${e.target}` : `Called by ⬅ ${e.source}`}
                         </span>
-                        <span className="text-[10px] text-blue-400 font-mono">{e.call_count} calls</span>
+                        <span className="text-[10px] text-accent font-bold">{e.call_count} calls</span>
                       </button>
                     ))}
                 </div>
@@ -553,72 +533,72 @@ export default function MultiAgentGraphPage() {
         </div>
       </div>
 
-      {/* Agent Clarification & Guessing Risk Overview Table */}
-      <Card className="border-slate-800 bg-slate-900/40 p-5 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+      {/* Agent Clarification Overview Table */}
+      <Card className="border border-border bg-surface p-5 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
           <div className="flex items-center gap-2">
-            <HelpCircle size={16} className="text-sky-400" />
-            <h3 className="text-sm font-bold text-white">Agent Clarification Rates vs. Guessing Risk Analysis</h3>
+            <HelpCircle size={16} className="text-accent" />
+            <h3 className="text-xs font-bold text-ink uppercase tracking-wider font-mono">Agent Clarification Rates vs. Guessing Risk Analysis</h3>
           </div>
-          <Badge className="bg-slate-950 text-slate-300 border-slate-800 text-[10px] font-mono">
+          <Badge variant="secondary" className="text-[10px] font-mono">
             SDK intent_confidence_threshold Policy
           </Badge>
         </div>
 
-        <p className="text-xs text-slate-400 leading-relaxed">
-          When <code className="text-sky-300">trace_llm(model, intent_confidence_threshold=0.7)</code> is enabled, agents returning intent confidence below threshold bypass tool execution and request clarification. Teams with <span className="text-rose-400 font-semibold">0% clarification rate</span> on ambiguous inputs are a strong signal of blind guessing, which correlates directly with costly multi-turn misunderstanding retry loops.
+        <p className="text-xs text-inkDim leading-relaxed font-sans">
+          When <code className="text-accent font-mono">trace_llm(model, intent_confidence_threshold=0.7)</code> is enabled, agents returning intent confidence below threshold bypass tool execution and request clarification. Teams with <span className="text-bad font-semibold">0% clarification rate</span> on ambiguous inputs are a strong signal of blind guessing, which correlates directly with costly multi-turn misunderstanding retry loops.
         </p>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
-            <thead>
-              <tr className="border-b border-slate-800 text-slate-400 text-[11px]">
-                <th className="pb-2 font-semibold">Agent / ID</th>
-                <th className="pb-2 font-semibold">Role</th>
-                <th className="pb-2 font-semibold text-right">Invocations</th>
-                <th className="pb-2 font-semibold text-right">Clarifications</th>
-                <th className="pb-2 font-semibold text-right">Clarification Rate</th>
-                <th className="pb-2 font-semibold text-right">Error Rate</th>
-                <th className="pb-2 font-semibold text-center">Status / Assessment</th>
+            <thead className="border-b border-border text-inkDim text-[11px] bg-paper uppercase">
+              <tr>
+                <th className="py-2.5 px-3">Agent / ID</th>
+                <th className="py-2.5 px-3">Role</th>
+                <th className="py-2.5 px-3 text-right">Invocations</th>
+                <th className="py-2.5 px-3 text-right">Clarifications</th>
+                <th className="py-2.5 px-3 text-right">Clarification Rate</th>
+                <th className="py-2.5 px-3 text-right">Error Rate</th>
+                <th className="py-2.5 px-3 text-center">Status / Assessment</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-border">
               {nodes.map((node) => (
-                <tr key={node.id} className="hover:bg-slate-950/40 transition-colors">
-                  <td className="py-2.5 font-bold text-white">
+                <tr key={node.id} className="hover:bg-paper transition-colors">
+                  <td className="py-2.5 px-3 font-bold text-ink">
                     <button
                       onClick={() => {
                         setSelectedNode(node);
                         setSelectedEdge(null);
                       }}
-                      className="hover:text-sky-400 text-left"
+                      className="hover:text-accent text-left"
                     >
                       {node.label}
-                      <span className="block text-[10px] font-normal text-slate-500">{node.id}</span>
+                      <span className="block text-[10px] font-normal text-inkDim">{node.id}</span>
                     </button>
                   </td>
-                  <td className="py-2.5 text-slate-300">{node.role || "Autonomous Agent"}</td>
-                  <td className="py-2.5 text-right text-slate-200">{node.total_calls.toLocaleString()}</td>
-                  <td className="py-2.5 text-right text-sky-400 font-semibold">
+                  <td className="py-2.5 px-3 text-inkDim">{node.role || "Autonomous Agent"}</td>
+                  <td className="py-2.5 px-3 text-right text-ink">{node.total_calls.toLocaleString()}</td>
+                  <td className="py-2.5 px-3 text-right text-accent font-semibold">
                     {(node.clarification_count ?? 0).toLocaleString()}
                   </td>
-                  <td className="py-2.5 text-right">
-                    <span className={`font-bold ${(node.clarification_rate ?? 0) > 0 ? "text-sky-400" : "text-rose-400"}`}>
+                  <td className="py-2.5 px-3 text-right">
+                    <span className={`font-bold ${(node.clarification_rate ?? 0) > 0 ? "text-accent" : "text-bad"}`}>
                       {(node.clarification_rate ?? 0).toFixed(2)}%
                     </span>
                   </td>
-                  <td className="py-2.5 text-right">
-                    <span className={node.error_rate > 5 ? "text-red-400 font-bold" : "text-emerald-400"}>
+                  <td className="py-2.5 px-3 text-right">
+                    <span className={node.error_rate > 5 ? "text-bad font-bold" : "text-good"}>
                       {node.error_rate}%
                     </span>
                   </td>
-                  <td className="py-2.5 text-center">
+                  <td className="py-2.5 px-3 text-center">
                     {(node.clarification_rate === 0 || node.guessing_risk) ? (
-                      <Badge className="bg-rose-950/80 text-rose-300 border-rose-800 text-[10px]">
+                      <Badge variant="bad" className="text-[10px]">
                         ⚠️ 0% Rate (Guessing Risk)
                       </Badge>
                     ) : (
-                      <Badge className="bg-emerald-950 text-emerald-300 border-emerald-800 text-[10px]">
+                      <Badge variant="good" className="text-[10px]">
                         ✓ Calibrated Confidence
                       </Badge>
                     )}

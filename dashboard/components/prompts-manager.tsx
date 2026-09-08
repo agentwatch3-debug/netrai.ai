@@ -170,7 +170,7 @@ export function PromptsManager() {
   }
 
   if (loading) {
-    return <div className="text-sm text-slate-400">Loading prompt templates...</div>;
+    return <div className="text-xs font-mono text-inkDim py-4">Loading prompt templates...</div>;
   }
 
   return (
@@ -178,35 +178,35 @@ export function PromptsManager() {
       {/* Top action bar */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-white">Prompt Templates & Version Control</h2>
-          <p className="text-xs text-slate-400">Manage, test, and instantly promote prompt versions across your agents.</p>
+          <h2 className="text-sm font-semibold text-ink">Prompt Templates & Version Control</h2>
+          <p className="text-xs text-inkDim">Manage, test, and instantly promote prompt versions across your agents.</p>
         </div>
-        <Button onClick={() => setShowCreatePrompt(true)} className="flex items-center gap-1.5 bg-blue-600 text-xs hover:bg-blue-500">
+        <Button onClick={() => setShowCreatePrompt(true)} variant="primary" className="flex items-center gap-1.5 text-xs h-8">
           <Plus size={14} /> New Prompt
         </Button>
       </div>
 
       {showCreatePrompt && (
-        <form onSubmit={handleCreatePrompt} className="rounded-lg border border-blue-900/60 bg-slate-950/80 p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-blue-300">Create New Prompt Template</h3>
+        <form onSubmit={handleCreatePrompt} className="border border-border bg-surface p-4 space-y-3">
+          <h3 className="text-xs font-bold text-ink uppercase tracking-wider">Create New Prompt Template</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <input
-              className="h-9 rounded border border-slate-800 bg-slate-900 px-3 text-xs text-white"
+              className="h-8 border border-border bg-surface px-3 text-xs text-ink placeholder-inkFaint focus:border-ink focus:outline-none font-mono"
               placeholder="Prompt Slug (e.g. customer_support_triage)"
               value={newPromptName}
               onChange={(e) => setNewPromptName(e.target.value)}
               required
             />
             <input
-              className="h-9 rounded border border-slate-800 bg-slate-900 px-3 text-xs text-white"
+              className="h-8 border border-border bg-surface px-3 text-xs text-ink placeholder-inkFaint focus:border-ink focus:outline-none"
               placeholder="Description (Optional)"
               value={newPromptDesc}
               onChange={(e) => setNewPromptDesc(e.target.value)}
             />
           </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" onClick={() => setShowCreatePrompt(false)} className="bg-slate-800 text-xs">Cancel</Button>
-            <Button type="submit" className="bg-blue-600 text-xs hover:bg-blue-500">Create Prompt</Button>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" onClick={() => setShowCreatePrompt(false)} variant="outline" className="text-xs h-7">Cancel</Button>
+            <Button type="submit" variant="primary" className="text-xs h-7">Create Prompt</Button>
           </div>
         </form>
       )}
@@ -214,35 +214,37 @@ export function PromptsManager() {
       {/* Main Split Layout: Prompt List vs Prompt Detail / Editor */}
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Left column: Prompts library */}
-        <div className="space-y-3 lg:col-span-4">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Prompt Library</span>
-          <div className="space-y-2">
+        <div className="space-y-2 lg:col-span-4">
+          <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-inkDim block pb-1 border-b border-border">
+            Prompt Library ({prompts.length})
+          </span>
+          <div className="space-y-1.5">
             {prompts.map((p) => {
               const isSelected = selectedPrompt === p.name;
               return (
                 <div
                   key={p.name}
                   onClick={() => void selectPrompt(p.name)}
-                  className={`cursor-pointer rounded-lg border p-3 transition-all ${
+                  className={`cursor-pointer border p-3 transition-colors ${
                     isSelected
-                      ? "border-blue-500/80 bg-blue-950/20 text-white"
-                      : "border-slate-800 bg-slate-900/40 text-slate-300 hover:border-slate-700 hover:bg-slate-900/70"
+                      ? "border-ink bg-accentSoft text-ink"
+                      : "border-border bg-surface text-ink hover:border-borderStrong hover:bg-paper"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-mono text-xs font-semibold">
-                      <FileCode2 size={14} className={isSelected ? "text-blue-400" : "text-slate-500"} />
+                    <div className="flex items-center gap-2 font-mono text-xs font-semibold text-ink">
+                      <FileCode2 size={14} className={isSelected ? "text-accent" : "text-inkDim"} />
                       <span>{p.name}</span>
                     </div>
-                    <Badge className="bg-slate-800 text-[10px] text-slate-300">
+                    <Badge variant="secondary" className="font-mono text-[10px]">
                       v{p.production_version || p.latest_version || 1}
                     </Badge>
                   </div>
-                  {p.description && <p className="mt-1.5 line-clamp-1 text-[11px] text-slate-400">{p.description}</p>}
-                  <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
-                    <span>Model: {p.model || "gpt-4.1-mini"}</span>
-                    <span className="text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 size={10} /> Production v{p.production_version || 1}
+                  {p.description && <p className="mt-1 line-clamp-1 text-[11px] text-inkDim">{p.description}</p>}
+                  <div className="mt-2 flex items-center justify-between text-[10px] text-inkDim font-mono border-t border-border/50 pt-1.5">
+                    <span>{p.model || "gpt-4.1-mini"}</span>
+                    <span className="text-good flex items-center gap-1 font-semibold">
+                      <CheckCircle2 size={10} /> Prod v{p.production_version || 1}
                     </span>
                   </div>
                 </div>
@@ -256,25 +258,25 @@ export function PromptsManager() {
           {detail ? (
             <>
               {/* Header & Version Selector */}
-              <Card className="border-slate-800 bg-slate-900/40 p-5 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+              <Card className="border border-border bg-surface p-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-bold text-white font-mono">{detail.name}</h2>
-                      <Badge className="bg-emerald-950 text-emerald-300 border-emerald-800/60 text-[10px]">
-                        Production: v{(detail.versions || []).find((v) => v.labels?.includes("production"))?.version || 1}
+                      <h2 className="text-base font-bold text-ink font-mono">{detail.name}</h2>
+                      <Badge variant="good" className="text-[10px] font-mono">
+                        Prod v{(detail.versions || []).find((v) => v.labels?.includes("production"))?.version || 1}
                       </Badge>
                     </div>
-                    {detail.description && <p className="text-xs text-slate-400 mt-1">{detail.description}</p>}
+                    {detail.description && <p className="text-xs text-inkDim mt-1">{detail.description}</p>}
                   </div>
                 </div>
 
                 {/* Version History Chips */}
                 <div className="space-y-2">
-                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="text-[11px] font-mono font-semibold text-inkDim uppercase tracking-wider flex items-center gap-1.5">
                     <History size={13} /> Version History
                   </span>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {(detail.versions || []).map((v) => {
                       const isSelected = selectedVersion?.version === v.version;
                       const isProd = v.labels?.includes("production");
@@ -286,14 +288,14 @@ export function PromptsManager() {
                             setEditorTemplate(v.template);
                             setEditorModel(v.model);
                           }}
-                          className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-mono transition-all ${
+                          className={`flex items-center gap-1.5 border px-2.5 py-1 text-xs font-mono transition-colors ${
                             isSelected
-                              ? "border-blue-500 bg-blue-950/40 text-blue-300 font-bold"
-                              : "border-slate-800 bg-slate-950/60 text-slate-400 hover:border-slate-700"
+                              ? "border-ink bg-ink text-paper font-bold"
+                              : "border-border bg-surface text-ink hover:border-borderStrong hover:bg-paper"
                           }`}
                         >
                           <span>v{v.version}</span>
-                          {isProd && <Badge className="bg-emerald-950 text-emerald-300 text-[9px] px-1 py-0">PROD</Badge>}
+                          {isProd && <Badge variant="good" className="text-[9px] px-1 py-0">PROD</Badge>}
                         </button>
                       );
                     })}
@@ -302,26 +304,27 @@ export function PromptsManager() {
 
                 {/* Selected Version Metadata & Promotion */}
                 {selectedVersion && (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-950/80 p-3 text-xs">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-slate-300">
-                        <span className="font-semibold">Version {selectedVersion.version}</span>
+                  <div className="flex flex-wrap items-center justify-between gap-3 border border-border bg-paper p-3 text-xs font-mono">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2 text-ink">
+                        <span className="font-bold">Version {selectedVersion.version}</span>
                         <span>·</span>
-                        <span className="text-slate-400">{selectedVersion.model}</span>
+                        <span className="text-inkDim">{selectedVersion.model}</span>
                         {selectedVersion.commit_message && (
                           <>
                             <span>·</span>
-                            <span className="italic text-slate-400">"{selectedVersion.commit_message}"</span>
+                            <span className="italic text-inkDim">"{selectedVersion.commit_message}"</span>
                           </>
                         )}
                       </div>
-                      <p className="text-[10px] text-slate-500">Created: {new Date(selectedVersion.created_at).toLocaleString()}</p>
+                      <p className="text-[10px] text-inkFaint">Created: {new Date(selectedVersion.created_at).toLocaleString()}</p>
                     </div>
 
                     {!selectedVersion.labels?.includes("production") && (
                       <Button
                         onClick={() => void handlePromote(selectedVersion.version, "production")}
-                        className="bg-emerald-600 hover:bg-emerald-500 text-xs h-7 px-2.5 flex items-center gap-1"
+                        variant="accent"
+                        className="text-xs h-7 px-2.5 flex items-center gap-1"
                       >
                         <CheckCircle2 size={12} /> Promote to Production
                       </Button>
@@ -331,17 +334,17 @@ export function PromptsManager() {
               </Card>
 
               {/* Editor & Publish New Version */}
-              <Card className="border-slate-800 bg-slate-900/40 p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-white uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles size={14} className="text-blue-400" /> Prompt Template Editor
+              <Card className="border border-border bg-surface p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-border pb-2">
+                  <span className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles size={14} className="text-accent" /> Prompt Template Editor
                   </span>
-                  <span className="text-[11px] text-slate-400 font-mono">Use {"{{variable}}"} for dynamic variables</span>
+                  <span className="text-[11px] text-inkDim font-mono">Use {"{{variable}}"} for dynamic variables</span>
                 </div>
 
                 <form onSubmit={handlePublishVersion} className="space-y-3">
                   <textarea
-                    className="w-full h-44 rounded-lg border border-slate-800 bg-slate-950 p-3 font-mono text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+                    className="w-full h-44 border border-border bg-paper p-3 font-mono text-xs text-ink placeholder-inkFaint focus:border-ink focus:outline-none"
                     value={editorTemplate}
                     onChange={(e) => setEditorTemplate(e.target.value)}
                     placeholder="Enter prompt template with {{variables}}..."
@@ -350,13 +353,13 @@ export function PromptsManager() {
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <input
-                      className="h-8 rounded border border-slate-800 bg-slate-950 px-3 text-xs text-white"
+                      className="h-8 border border-border bg-surface px-3 text-xs text-ink placeholder-inkFaint focus:border-ink focus:outline-none"
                       placeholder="Commit Message (e.g. Added safety constraints)"
                       value={editorCommitMsg}
                       onChange={(e) => setEditorCommitMsg(e.target.value)}
                     />
                     <select
-                      className="h-8 rounded border border-slate-800 bg-slate-950 px-3 text-xs text-white"
+                      className="h-8 border border-border bg-surface px-3 text-xs text-ink focus:border-ink focus:outline-none font-mono"
                       value={editorModel}
                       onChange={(e) => setEditorModel(e.target.value)}
                     >
@@ -367,8 +370,8 @@ export function PromptsManager() {
                     </select>
                   </div>
 
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={isPublishing} className="bg-blue-600 hover:bg-blue-500 text-xs">
+                  <div className="flex justify-end pt-1">
+                    <Button type="submit" disabled={isPublishing} variant="primary" className="text-xs h-8">
                       {isPublishing ? "Publishing..." : "Publish New Version"}
                     </Button>
                   </div>
@@ -376,18 +379,20 @@ export function PromptsManager() {
               </Card>
 
               {/* Dynamic Variables Live Playground */}
-              <Card className="border-slate-800 bg-slate-900/40 p-5 space-y-4">
-                <span className="text-xs font-semibold text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <Play size={14} className="text-emerald-400" /> Variable Substitution Playground
-                </span>
+              <Card className="border border-border bg-surface p-5 space-y-4">
+                <div className="border-b border-border pb-2">
+                  <span className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
+                    <Play size={14} className="text-good" /> Variable Substitution Playground
+                  </span>
+                </div>
 
                 {Object.keys(variables).length > 0 ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {Object.keys(variables).map((k) => (
                       <div key={k} className="space-y-1">
-                        <label className="text-[10px] font-mono font-medium text-slate-400">{`{{${k}}}`}</label>
+                        <label className="text-[10px] font-mono font-bold text-inkDim">{`{{${k}}}`}</label>
                         <input
-                          className="w-full h-8 rounded border border-slate-800 bg-slate-950 px-2.5 text-xs text-white"
+                          className="w-full h-8 border border-border bg-surface px-2.5 text-xs text-ink placeholder-inkFaint focus:border-ink focus:outline-none font-mono"
                           value={variables[k]}
                           onChange={(e) => setVariables({ ...variables, [k]: e.target.value })}
                         />
@@ -395,19 +400,19 @@ export function PromptsManager() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 italic">No {"{{variables}}"} detected in this prompt template.</p>
+                  <p className="text-xs text-inkDim italic font-mono">No {"{{variables}}"} detected in this prompt template.</p>
                 )}
 
-                <div className="space-y-1.5 pt-2">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase">Compiled Live Preview</span>
-                  <pre className="max-h-48 overflow-auto rounded-lg border border-slate-800 bg-slate-950 p-3 font-mono text-xs text-emerald-300">
+                <div className="space-y-1.5 pt-2 border-t border-border">
+                  <span className="text-[10px] font-mono font-bold text-inkDim uppercase">Compiled Live Preview</span>
+                  <pre className="max-h-48 overflow-auto border border-border bg-paper p-3 font-mono text-xs text-ink">
                     {compiledPreview}
                   </pre>
                 </div>
               </Card>
             </>
           ) : (
-            <div className="rounded-lg border border-slate-800 bg-slate-900/20 p-12 text-center text-slate-400 text-sm">
+            <div className="border border-border bg-surface p-12 text-center text-inkDim text-xs font-mono">
               Select a prompt from the library to view versions, test variables, and edit templates.
             </div>
           )}

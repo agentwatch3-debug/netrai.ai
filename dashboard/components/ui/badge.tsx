@@ -2,7 +2,7 @@ import { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-  variant?: "good" | "bad" | "warn" | "neutral" | "accent" | "default";
+  variant?: "good" | "bad" | "warn" | "neutral" | "accent" | "default" | "secondary";
   dot?: boolean;
 }
 

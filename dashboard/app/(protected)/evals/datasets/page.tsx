@@ -56,7 +56,6 @@ export default function GoldenDatasetsPage() {
         const list = body.data || [];
         setDatasets(list);
         if (list.length > 0) {
-          // Fetch full dataset details for first item
           const first = list[0];
           setSelectedDataset({
             ...first,
@@ -107,82 +106,82 @@ export default function GoldenDatasetsPage() {
   }
 
   if (loading) {
-    return <div className="text-sm text-slate-400">Loading Golden Datasets and CI Test Runs...</div>;
+    return <div className="text-xs font-mono text-inkDim py-4">Loading Golden Datasets and CI Test Runs...</div>;
   }
 
   const latestRun = testRuns[0];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="text-xl font-semibold text-white">Golden Datasets & CI Regression Testing</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Golden Datasets & CI Regression Testing</h1>
+          <p className="mt-1 text-xs text-inkDim">
             Automated pre-deploy evaluation suites. Compare agent outputs against exact, semantic, and judge criteria before merging.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/docs/ci-integration" className="text-xs text-blue-400 hover:underline flex items-center gap-1 font-mono">
+          <Link href="/docs/ci-integration" className="text-xs text-accent hover:underline flex items-center gap-1 font-mono">
             View CI Workflow Guide <ArrowUpRight size={12} />
           </Link>
         </div>
       </div>
 
       {/* Hero Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
-        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] text-slate-400 uppercase font-semibold">Golden Datasets</span>
-            <Database size={15} className="text-blue-400" />
+      <div className="grid border border-border bg-surface sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border">
+        <div className="p-4 space-y-1">
+          <div className="flex items-center justify-between text-[11px] font-mono text-inkDim uppercase">
+            <span>Golden Datasets</span>
+            <Database size={15} className="text-accent" />
           </div>
-          <p className="text-2xl font-bold text-white font-mono">{datasets.length}</p>
-          <p className="text-[10px] text-slate-500">Versioned test collections</p>
-        </Card>
+          <p className="text-2xl font-bold text-ink font-mono">{datasets.length}</p>
+          <p className="text-[10px] text-inkFaint font-mono">Versioned test collections</p>
+        </div>
 
-        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] text-slate-400 uppercase font-semibold">Total Test Cases</span>
-            <Layers size={15} className="text-emerald-400" />
+        <div className="p-4 space-y-1">
+          <div className="flex items-center justify-between text-[11px] font-mono text-inkDim uppercase">
+            <span>Total Test Cases</span>
+            <Layers size={15} className="text-good" />
           </div>
-          <p className="text-2xl font-bold text-emerald-400 font-mono">
+          <p className="text-2xl font-bold text-good font-mono">
             {selectedDataset?.cases?.length || 3}
           </p>
-          <p className="text-[10px] text-slate-500">Exact, Semantic & LLM-Judge cases</p>
-        </Card>
+          <p className="text-[10px] text-inkFaint font-mono">Exact, Semantic & Judge cases</p>
+        </div>
 
-        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] text-slate-400 uppercase font-semibold">Latest CI Run Pass Rate</span>
-            <ShieldCheck size={15} className="text-blue-400" />
+        <div className="p-4 space-y-1">
+          <div className="flex items-center justify-between text-[11px] font-mono text-inkDim uppercase">
+            <span>Latest CI Pass Rate</span>
+            <ShieldCheck size={15} className="text-accent" />
           </div>
-          <p className="text-2xl font-bold text-white font-mono">
+          <p className="text-2xl font-bold text-ink font-mono">
             {latestRun ? Math.round((latestRun.passed_cases / latestRun.total_cases) * 100) : 100}%
           </p>
-          <p className="text-[10px] text-slate-500">{latestRun ? `${latestRun.passed_cases}/${latestRun.total_cases} passed` : "No runs recorded"}</p>
-        </Card>
+          <p className="text-[10px] text-inkFaint font-mono">{latestRun ? `${latestRun.passed_cases}/${latestRun.total_cases} passed` : "No runs recorded"}</p>
+        </div>
 
-        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] text-slate-400 uppercase font-semibold">Regression Status</span>
-            <AlertCircle size={15} className={latestRun?.has_regressions ? "text-red-400" : "text-emerald-400"} />
+        <div className="p-4 space-y-1">
+          <div className="flex items-center justify-between text-[11px] font-mono text-inkDim uppercase">
+            <span>Regression Status</span>
+            <AlertCircle size={15} className={latestRun?.has_regressions ? "text-bad" : "text-good"} />
           </div>
-          <p className={`text-sm font-bold font-mono pt-2 ${latestRun?.has_regressions ? "text-red-400" : "text-emerald-400"}`}>
+          <p className={`text-sm font-bold font-mono pt-2 ${latestRun?.has_regressions ? "text-bad" : "text-good"}`}>
             {latestRun?.has_regressions ? "REGRESSION DETECTED" : "NO REGRESSIONS"}
           </p>
-          <p className="text-[10px] text-slate-500">Passed previous baseline tests</p>
-        </Card>
+          <p className="text-[10px] text-inkFaint font-mono">Passed previous baseline tests</p>
+        </div>
       </div>
 
       {/* CLI Quickstart Banner */}
-      <Card className="border-blue-900/50 bg-blue-950/20 p-4 flex flex-wrap items-center justify-between gap-4">
+      <Card className="border border-border bg-paper p-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-950 border border-blue-800 text-blue-400">
+          <div className="flex h-9 w-9 items-center justify-center border border-border bg-surface text-accent">
             <Terminal size={18} />
           </div>
           <div>
-            <span className="text-xs font-bold text-white">Execute Pre-Deploy Test in Terminal or CI</span>
-            <p className="text-[11px] text-slate-400 font-mono">
+            <span className="text-xs font-bold text-ink">Execute Pre-Deploy Test in Terminal or CI</span>
+            <p className="text-[11px] text-inkDim font-mono">
               agentwatch test run --dataset customer-support-v1 --runner app/agent.py:run_support_agent
             </p>
           </div>
@@ -190,7 +189,8 @@ export default function GoldenDatasetsPage() {
 
         <Button
           onClick={copyCliCommand}
-          className="h-8 text-xs bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 font-mono"
+          variant="primary"
+          className="h-8 text-xs flex items-center gap-1.5 font-mono"
         >
           <Copy size={12} /> {copied ? "Copied Command!" : "Copy CLI Command"}
         </Button>
@@ -198,51 +198,52 @@ export default function GoldenDatasetsPage() {
 
       {/* Golden Cases Explorer */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+        <div className="flex items-center justify-between border-b border-border pb-2">
           <div>
-            <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
+            <h2 className="text-xs font-bold text-ink uppercase tracking-wider font-mono">
               Dataset: {selectedDataset?.name || "customer-support-v1"}
             </h2>
-            <p className="text-xs text-slate-400">{selectedDataset?.description}</p>
+            <p className="text-xs text-inkDim">{selectedDataset?.description}</p>
           </div>
-          <Badge className="bg-slate-800 text-slate-300 text-xs font-mono">
+          <Badge variant="secondary" className="text-xs font-mono">
             {selectedDataset?.cases?.length || 0} Test Cases
           </Badge>
         </div>
 
         <div className="space-y-3">
           {(selectedDataset?.cases || []).map((c, i) => (
-            <Card key={c.id || i} className="border-slate-800 bg-slate-950 p-4 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-900 pb-2.5">
+            <Card key={c.id || i} className="border border-border bg-surface p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold text-white">{c.case_id}</span>
+                  <span className="font-mono text-xs font-bold text-ink">{c.case_id}</span>
                   <Badge
-                    className={
+                    variant={
                       c.eval_type === "exact"
-                        ? "bg-blue-950 text-blue-300 border-blue-800 text-[9px] uppercase"
+                        ? "accent"
                         : c.eval_type === "semantic"
-                        ? "bg-emerald-950 text-emerald-300 border-emerald-800 text-[9px] uppercase"
-                        : "bg-purple-950 text-purple-300 border-purple-800 text-[9px] uppercase"
+                        ? "good"
+                        : "secondary"
                     }
+                    className="text-[9px] uppercase font-mono"
                   >
                     {c.eval_type === "llm_judge" ? "LLM AS JUDGE" : `${c.eval_type.toUpperCase()} MATCH`}
                   </Badge>
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 text-xs">
+              <div className="grid gap-3 sm:grid-cols-2 text-xs font-mono">
                 <div className="space-y-1">
-                  <span className="text-[10px] text-slate-500 font-mono uppercase font-semibold">Test Input</span>
-                  <div className="rounded bg-slate-900/80 border border-slate-800/80 p-2 font-mono text-[11px] text-slate-300">
+                  <span className="text-[10px] text-inkDim uppercase font-semibold">Test Input</span>
+                  <div className="border border-border bg-paper p-2 text-[11px] text-ink">
                     {JSON.stringify(c.input, null, 2)}
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-[10px] text-slate-500 font-mono uppercase font-semibold">
+                  <span className="text-[10px] text-inkDim uppercase font-semibold">
                     {c.eval_type === "llm_judge" ? "Evaluation Criteria" : "Expected Output"}
                   </span>
-                  <div className="rounded bg-slate-900/80 border border-slate-800/80 p-2 font-mono text-[11px] text-emerald-400">
+                  <div className="border border-border bg-paper p-2 text-[11px] text-good font-semibold">
                     {c.expected_criteria || JSON.stringify(c.expected_output, null, 2)}
                   </div>
                 </div>
@@ -253,45 +254,42 @@ export default function GoldenDatasetsPage() {
       </div>
 
       {/* Historical CI Test Runs Table */}
-      <Card className="border-slate-800 bg-slate-900/40 p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-          <GitBranch size={16} className="text-blue-400" /> Pre-Deploy & CI Test Runs History
+      <Card className="border border-border bg-surface p-6 space-y-4">
+        <h2 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-2 border-b border-border pb-3 font-mono">
+          <GitBranch size={16} className="text-accent" /> Pre-Deploy & CI Test Runs History
         </h2>
 
-        <div className="space-y-3">
+        <div className="space-y-3 font-mono">
           {testRuns.map((run) => (
-            <div key={run.id} className="rounded-lg border border-slate-800 bg-slate-950 p-4 text-xs space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-900 pb-2">
+            <div key={run.id} className="border border-border bg-paper p-4 text-xs space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
                 <div className="flex items-center gap-3">
                   <Badge
-                    className={
-                      run.has_regressions
-                        ? "bg-red-950 text-red-300 border-red-800 text-[10px]"
-                        : "bg-emerald-950 text-emerald-300 border-emerald-800 text-[10px]"
-                    }
+                    variant={run.has_regressions ? "bad" : "good"}
+                    className="text-[10px]"
                   >
                     {run.has_regressions ? "🚨 REGRESSION" : "✅ PASSED"}
                   </Badge>
 
-                  <span className="font-mono text-white font-bold">{run.dataset_name}</span>
+                  <span className="font-mono text-ink font-bold">{run.dataset_name}</span>
 
-                  <div className="flex items-center gap-1 text-[11px] text-slate-400 font-mono">
-                    <GitBranch size={12} className="text-blue-400" /> {run.git_branch}
-                    <span className="text-slate-600">·</span>
-                    <GitCommit size={12} className="text-slate-500" /> {run.git_commit}
+                  <div className="flex items-center gap-1 text-[11px] text-inkDim font-mono">
+                    <GitBranch size={12} className="text-accent" /> {run.git_branch}
+                    <span>·</span>
+                    <GitCommit size={12} className="text-inkDim" /> {run.git_commit}
                   </div>
                 </div>
 
-                <span className="text-[11px] text-slate-500 font-mono">
+                <span className="text-[11px] text-inkDim font-mono">
                   {new Date(run.created_at).toLocaleString()}
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] text-slate-400">
+              <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] text-inkDim">
                 <span>
-                  Result: <strong className="text-emerald-400">{run.passed_cases} passed</strong> / {run.total_cases} cases
+                  Result: <strong className="text-good">{run.passed_cases} passed</strong> / {run.total_cases} cases
                 </span>
-                <span className="text-slate-500">Run ID: #{run.id}</span>
+                <span className="text-inkFaint">Run ID: #{run.id}</span>
               </div>
             </div>
           ))}

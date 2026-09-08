@@ -124,7 +124,7 @@ export default function EnterpriseSSOPage() {
   }
 
   if (loading) {
-    return <div className="text-sm text-slate-400">Loading Enterprise SSO configuration...</div>;
+    return <div className="text-xs font-mono text-inkDim py-4">Loading Enterprise SSO configuration...</div>;
   }
 
   const isEnterprise = (config?.plan_tier || "enterprise") === "enterprise";
@@ -132,35 +132,35 @@ export default function EnterpriseSSOPage() {
   if (!isEnterprise) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-xl font-semibold text-white">Enterprise Single Sign-On (SSO)</h1>
-          <p className="text-sm text-slate-400">
+        <div className="border-b border-border pb-4">
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Enterprise Single Sign-On (SSO)</h1>
+          <p className="mt-1 text-xs text-inkDim">
             SAML 2.0 and OIDC authentication for Okta, Microsoft Azure AD (Entra ID), and Google Workspace.
           </p>
         </div>
 
-        <Card className="border-amber-900/60 bg-amber-950/20 p-8 text-center space-y-4 max-w-2xl mx-auto">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-950 border border-amber-800 text-amber-400 mx-auto">
+        <Card className="border border-border bg-surface p-8 text-center space-y-4 max-w-2xl mx-auto">
+          <div className="flex h-12 w-12 items-center justify-center border border-border bg-paper text-ink mx-auto">
             <Lock size={24} />
           </div>
 
-          <div className="space-y-2">
-            <h2 className="text-lg font-bold text-white">Enterprise Tier Feature</h2>
-            <p className="text-xs text-slate-300 max-w-md mx-auto">
+          <div className="space-y-1">
+            <h2 className="text-base font-bold text-ink">Enterprise Tier Feature</h2>
+            <p className="text-xs text-inkDim max-w-md mx-auto">
               Single Sign-On (SAML 2.0 / OIDC) and Just-In-Time (JIT) provisioning are exclusive to the Enterprise Plan.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 text-left max-w-md mx-auto text-xs text-slate-400 pt-2 font-mono">
-            <div className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-emerald-400" /> Okta & Azure AD SAML 2.0</div>
-            <div className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-emerald-400" /> Automated JIT Provisioning</div>
-            <div className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-emerald-400" /> Domain-wide Enforcement</div>
-            <div className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-emerald-400" /> Dedicated Security SLA</div>
+          <div className="grid grid-cols-2 gap-3 text-left max-w-md mx-auto text-xs text-inkDim pt-2 font-mono">
+            <div className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-good" /> Okta & Azure AD SAML 2.0</div>
+            <div className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-good" /> Automated JIT Provisioning</div>
+            <div className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-good" /> Domain-wide Enforcement</div>
+            <div className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-good" /> Dedicated Security SLA</div>
           </div>
 
           <div className="pt-4">
             <Link href="/settings/billing">
-              <Button className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-6">
+              <Button variant="primary" className="text-xs font-mono px-6">
                 Upgrade to Enterprise Plan
               </Button>
             </Link>
@@ -175,10 +175,10 @@ export default function EnterpriseSSOPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="text-xl font-semibold text-white">Enterprise Single Sign-On (SAML 2.0)</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Enterprise Single Sign-On (SAML 2.0)</h1>
+          <p className="mt-1 text-xs text-inkDim">
             Connect your corporate Identity Provider (IdP) for unified authentication and centralized user access control.
           </p>
         </div>
@@ -186,7 +186,7 @@ export default function EnterpriseSSOPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/docs/sso-setup"
-            className="text-xs text-blue-400 hover:underline flex items-center gap-1 font-mono"
+            className="text-xs text-accent hover:underline flex items-center gap-1 font-mono"
           >
             IdP Setup Manual <ArrowUpRight size={12} />
           </Link>
@@ -194,36 +194,36 @@ export default function EnterpriseSSOPage() {
       </div>
 
       {/* Service Provider (SP) Metadata Box */}
-      <Card className="border-slate-800 bg-slate-900/40 p-5 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+      <Card className="border border-border bg-surface p-5 space-y-4">
+        <div className="flex items-center justify-between border-b border-border pb-2.5">
           <div className="flex items-center gap-2">
-            <Globe size={16} className="text-blue-400" />
-            <h2 className="text-xs font-bold text-white uppercase tracking-wider">
+            <Globe size={16} className="text-accent" />
+            <h2 className="text-xs font-bold text-ink uppercase tracking-wider font-mono">
               AgentWatch Service Provider (SP) Coordinates
             </h2>
           </div>
-          <Badge className="bg-emerald-950 text-emerald-300 border-emerald-800 text-[10px] font-mono">
+          <Badge variant="good" className="text-[10px] font-mono">
             SAML 2.0 READY
           </Badge>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 text-xs">
           <div className="space-y-1">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">Assertion Consumer Service (ACS) URL</span>
-            <div className="flex items-center justify-between rounded bg-slate-950 border border-slate-800 p-2 font-mono text-[11px] text-slate-300">
+            <span className="text-[10px] text-inkDim uppercase font-mono font-semibold">Assertion Consumer Service (ACS) URL</span>
+            <div className="flex items-center justify-between border border-border bg-paper p-2 font-mono text-[11px] text-ink">
               <span className="truncate mr-2">{acsUrl}</span>
-              <button onClick={() => copyText(acsUrl, "acs")} className="text-slate-400 hover:text-white">
-                <Copy size={12} className={copiedField === "acs" ? "text-emerald-400" : ""} />
+              <button onClick={() => copyText(acsUrl, "acs")} className="text-inkDim hover:text-ink">
+                <Copy size={12} className={copiedField === "acs" ? "text-good" : ""} />
               </button>
             </div>
           </div>
 
           <div className="space-y-1">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">Entity ID / Audience URI</span>
-            <div className="flex items-center justify-between rounded bg-slate-950 border border-slate-800 p-2 font-mono text-[11px] text-slate-300">
+            <span className="text-[10px] text-inkDim uppercase font-mono font-semibold">Entity ID / Audience URI</span>
+            <div className="flex items-center justify-between border border-border bg-paper p-2 font-mono text-[11px] text-ink">
               <span className="truncate mr-2">{spEntityId}</span>
-              <button onClick={() => copyText(spEntityId, "entity")} className="text-slate-400 hover:text-white">
-                <Copy size={12} className={copiedField === "entity" ? "text-emerald-400" : ""} />
+              <button onClick={() => copyText(spEntityId, "entity")} className="text-inkDim hover:text-ink">
+                <Copy size={12} className={copiedField === "entity" ? "text-good" : ""} />
               </button>
             </div>
           </div>
@@ -232,19 +232,19 @@ export default function EnterpriseSSOPage() {
 
       {/* Main IdP Configuration Form */}
       <form onSubmit={(e) => void handleSave(e)} className="space-y-6">
-        <Card className="border-slate-800 bg-slate-900/40 p-6 space-y-6">
-          <div className="border-b border-slate-800 pb-3">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <KeyRound size={16} className="text-blue-400" /> Identity Provider (IdP) Connection Settings
+        <Card className="border border-border bg-surface p-6 space-y-6">
+          <div className="border-b border-border pb-3">
+            <h2 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-2 font-mono">
+              <KeyRound size={16} className="text-accent" /> Identity Provider (IdP) Connection Settings
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-inkDim mt-0.5">
               Select your identity provider and input the SAML 2.0 endpoints and X.509 certificate.
             </p>
           </div>
 
           {/* Provider Selection Buttons */}
           <div className="space-y-2">
-            <label className="text-[11px] text-slate-400 uppercase font-semibold">Identity Provider</label>
+            <label className="text-[11px] text-inkDim uppercase font-mono font-semibold">Identity Provider</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { id: "okta", label: "Okta SAML" },
@@ -256,10 +256,10 @@ export default function EnterpriseSSOPage() {
                   type="button"
                   key={p.id}
                   onClick={() => setProvider(p.id)}
-                  className={`p-3 rounded-lg border text-xs font-mono font-semibold transition-colors text-center ${
+                  className={`p-3 border text-xs font-mono font-semibold transition-colors text-center ${
                     provider === p.id
-                      ? "bg-blue-600/20 border-blue-500 text-blue-400"
-                      : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                      ? "border-ink bg-ink text-paper"
+                      : "border-border bg-surface text-ink hover:bg-paper"
                   }`}
                 >
                   {p.label}
@@ -269,9 +269,9 @@ export default function EnterpriseSSOPage() {
           </div>
 
           {/* Domain & SSO URL Inputs */}
-          <div className="grid gap-4 sm:grid-cols-2 text-xs">
+          <div className="grid gap-4 sm:grid-cols-2 text-xs font-mono">
             <div>
-              <label className="text-[11px] text-slate-400 uppercase font-semibold">
+              <label className="text-[11px] text-inkDim uppercase font-semibold">
                 Corporate Domain
               </label>
               <input
@@ -280,13 +280,13 @@ export default function EnterpriseSSOPage() {
                 onChange={(e) => setDomain(e.target.value)}
                 placeholder="acmewatch.com"
                 required
-                className="w-full mt-1 rounded bg-slate-950 border border-slate-800 p-2.5 font-mono text-white text-xs"
+                className="w-full mt-1 border border-border bg-surface p-2.5 text-ink placeholder-inkFaint focus:border-ink focus:outline-none text-xs font-mono"
               />
-              <span className="text-[10px] text-slate-500 mt-1 block">Members with @{domain} will authenticate via SSO.</span>
+              <span className="text-[10px] text-inkFaint mt-1 block">Members with @{domain} will authenticate via SSO.</span>
             </div>
 
             <div>
-              <label className="text-[11px] text-slate-400 uppercase font-semibold">
+              <label className="text-[11px] text-inkDim uppercase font-semibold">
                 Identity Provider Issuer / Entity ID
               </label>
               <input
@@ -295,13 +295,13 @@ export default function EnterpriseSSOPage() {
                 onChange={(e) => setIdpEntityId(e.target.value)}
                 placeholder="http://www.okta.com/exk..."
                 required
-                className="w-full mt-1 rounded bg-slate-950 border border-slate-800 p-2.5 font-mono text-white text-xs"
+                className="w-full mt-1 border border-border bg-surface p-2.5 text-ink placeholder-inkFaint focus:border-ink focus:outline-none text-xs font-mono"
               />
             </div>
           </div>
 
-          <div>
-            <label className="text-[11px] text-slate-400 uppercase font-semibold">
+          <div className="font-mono text-xs">
+            <label className="text-[11px] text-inkDim uppercase font-semibold">
               IdP Single Sign-On URL (SAML Entry Point)
             </label>
             <input
@@ -310,62 +310,63 @@ export default function EnterpriseSSOPage() {
               onChange={(e) => setIdpSsoUrl(e.target.value)}
               placeholder="https://acme.okta.com/app/agentwatch/sso/saml"
               required
-              className="w-full mt-1 rounded bg-slate-950 border border-slate-800 p-2.5 font-mono text-white text-xs"
+              className="w-full mt-1 border border-border bg-surface p-2.5 text-ink placeholder-inkFaint focus:border-ink focus:outline-none text-xs font-mono"
             />
           </div>
 
-          <div>
-            <label className="text-[11px] text-slate-400 uppercase font-semibold">
+          <div className="font-mono text-xs">
+            <label className="text-[11px] text-inkDim uppercase font-semibold">
               Public X.509 Signing Certificate (PEM)
             </label>
             <textarea
               rows={4}
               value={idpCertificate}
               onChange={(e) => setIdpCertificate(e.target.value)}
-              placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+              placeholder="-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"
               required
-              className="w-full mt-1 rounded bg-slate-950 border border-slate-800 p-2.5 font-mono text-white text-xs"
+              className="w-full mt-1 border border-border bg-paper p-2.5 text-ink placeholder-inkFaint focus:border-ink focus:outline-none text-xs font-mono"
             />
           </div>
 
           {/* Security & Enforcement Toggles */}
-          <div className="space-y-3 pt-2 border-t border-slate-800">
-            <label className="text-[11px] text-slate-400 uppercase font-semibold">Security Enforcements</label>
+          <div className="space-y-3 pt-2 border-t border-border">
+            <label className="text-[11px] text-inkDim uppercase font-mono font-semibold">Security Enforcements</label>
             
-            <div className="flex items-center justify-between rounded-lg bg-slate-950 border border-slate-800 p-3">
+            <div className="flex items-center justify-between border border-border bg-paper p-3">
               <div className="space-y-0.5">
-                <span className="text-xs font-bold text-white">Enforce SSO for all organization members</span>
-                <p className="text-[11px] text-slate-400">Disable password & social logins for @{domain} users.</p>
+                <span className="text-xs font-bold text-ink">Enforce SSO for all organization members</span>
+                <p className="text-[11px] text-inkDim">Disable password & social logins for @{domain} users.</p>
               </div>
               <input
                 type="checkbox"
                 checked={enforceSso}
                 onChange={(e) => setEnforceSso(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500"
+                className="h-4 w-4 border-border text-ink focus:ring-ink"
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-lg bg-slate-950 border border-slate-800 p-3">
+            <div className="flex items-center justify-between border border-border bg-paper p-3">
               <div className="space-y-0.5">
-                <span className="text-xs font-bold text-white">Allow IdP-Initiated Login</span>
-                <p className="text-[11px] text-slate-400">Allow users to log in directly from Okta/Azure dashboard tiles.</p>
+                <span className="text-xs font-bold text-ink">Allow IdP-Initiated Login</span>
+                <p className="text-[11px] text-inkDim">Allow users to log in directly from Okta/Azure dashboard tiles.</p>
               </div>
               <input
                 type="checkbox"
                 checked={allowIdpInitiated}
                 onChange={(e) => setAllowIdpInitiated(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500"
+                className="h-4 w-4 border-border text-ink focus:ring-ink"
               />
             </div>
           </div>
 
           {/* Action Buttons & Handshake Tester */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-800">
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-border">
             <Button
               type="button"
               onClick={() => void handleTestConnection()}
               disabled={testing}
-              className="h-9 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1.5 font-mono"
+              variant="outline"
+              className="h-9 text-xs flex items-center gap-1.5 font-mono"
             >
               <RefreshCw size={13} className={testing ? "animate-spin" : ""} />
               {testing ? "Testing Handshake..." : "Test IdP Connection"}
@@ -374,7 +375,8 @@ export default function EnterpriseSSOPage() {
             <Button
               type="submit"
               disabled={saving}
-              className="h-9 text-xs bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5"
+              variant="primary"
+              className="h-9 text-xs flex items-center gap-1.5 font-mono"
             >
               <Save size={13} /> {saving ? "Saving Configuration..." : "Save SSO Configuration"}
             </Button>
@@ -383,10 +385,10 @@ export default function EnterpriseSSOPage() {
           {/* Test Handshake Result Banner */}
           {testResult && (
             <div
-              className={`rounded-lg border p-3 text-xs flex items-center gap-2 ${
+              className={`border p-3 text-xs flex items-center gap-2 font-mono ${
                 testResult.success
-                  ? "bg-emerald-950/40 border-emerald-800 text-emerald-300"
-                  : "bg-red-950/40 border-red-800 text-red-300"
+                  ? "border-good bg-good/10 text-good"
+                  : "border-bad bg-bad/10 text-bad"
               }`}
             >
               {testResult.success ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}

@@ -275,7 +275,7 @@ export default function ScopeDriftAnomaliesPage() {
                           <Button
                             onClick={() => void handleMarkExpected(item)}
                             disabled={resolvingId === item.id}
-                            className="border border-good bg-good text-white text-xs h-7 px-3 flex items-center gap-1.5 hover:bg-good/90"
+                            className="border border-good bg-good text-paper text-xs h-7 px-3 flex items-center gap-1.5 hover:bg-good/90"
                           >
                             <CheckCircle2 size={12} className={resolvingId === item.id ? "animate-spin" : ""} />
                             {resolvingId === item.id ? "Approving..." : "Approve Baseline"}
