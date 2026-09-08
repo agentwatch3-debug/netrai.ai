@@ -111,3 +111,36 @@ def test_cost_per_successful_outcome_metrics(client):
     expected_cost_per_outcome = round(agent["total_cost"] / agent["successful_outcomes"], 4)
     assert abs(agent["cost_per_successful_outcome"] - expected_cost_per_outcome) < 0.001
 
+
+def test_cost_optimization_advisories_endpoint(client):
+    response = client.get("/v1/analytics/cost-optimization")
+    assert response.status_code == 200
+    data = response.json()
+
+    assert "summary" in data
+    assert "opportunities" in data
+    assert data["currency"] == "INR"
+    assert data["usd_to_inr_rate"] > 0
+
+    summary = data["summary"]
+    assert summary["total_potential_monthly_savings_inr"] > 0
+    assert summary["prompt_caching_opportunities_count"] >= 1
+    assert summary["context_pruning_opportunities_count"] >= 1
+
+    ops = data["opportunities"]
+    assert len(ops) >= 2
+
+    # Check prompt caching opportunity structure
+    caching_op = next(o for o in ops if o["advisor_type"] == "prompt_caching")
+    assert caching_op["static_token_count"] >= 1000
+    assert caching_op["repeated_prompt_pct"] > 50.0
+    assert caching_op["estimated_monthly_savings_inr"] > 0
+    assert "cache_control" in caching_op["recommended_action"] or "prefix" in caching_op["recommended_action"]
+
+    # Check context pruning opportunity structure
+    pruning_op = next(o for o in ops if o["advisor_type"] == "context_pruning")
+    assert pruning_op["input_to_output_ratio"] > 25.0
+    assert pruning_op["avg_input_tokens"] > 1000
+    assert pruning_op["estimated_monthly_savings_inr"] > 0
+
+

@@ -371,3 +371,155 @@ async def get_cost_breakdown(
         },
     }
 
+
+MOCK_COST_OPTIMIZATIONS: list[dict[str, Any]] = [
+    {
+        "advisor_type": "prompt_caching",
+        "agent_id": "refund_approval_agent",
+        "agent_name": "Refund Approval Agent",
+        "provider": "anthropic",
+        "model": "claude-3-5-sonnet",
+        "headline": "Enable Anthropic Prompt Caching: 94% of calls share a 2,400-token system prompt",
+        "detail": "This agent sends the same 2,400-token financial policy & compliance instructions on 94% of calls. Enabling prompt caching on Anthropic (Claude 3.5 Sonnet) will yield a 90% discount on cache hits, reducing monthly token expenditure by 45.2%.",
+        "recommended_action": "Add cache_control: {'type': 'ephemeral'} to the system prompt block in your Anthropic messages API payload.",
+        "code_example": (
+            "// Anthropic Prompt Caching (90% discount on cache hits)\n"
+            "const response = await anthropic.messages.create({\n"
+            "  model: 'claude-3-5-sonnet-20241022',\n"
+            "  system: [\n"
+            "    {\n"
+            "      type: 'text',\n"
+            "      text: FINANCIAL_COMPLIANCE_POLICY,\n"
+            "      cache_control: { type: 'ephemeral' } // Caches static prompt\n"
+            "    }\n"
+            "  ],\n"
+            "  messages: [{ role: 'user', content: userRefundQuery }]\n"
+            "});"
+        ),
+        "repeated_prompt_pct": 94.0,
+        "static_token_count": 2400,
+        "input_to_output_ratio": 0.0,
+        "avg_input_tokens": 2650,
+        "avg_output_tokens": 180,
+        "sample_call_count": 320,
+        "estimated_monthly_calls": 9600,
+        "estimated_cost_reduction_pct": 45.2,
+        "estimated_monthly_savings_usd": 698.50,
+        "estimated_monthly_savings_inr": 58325.00,
+    },
+    {
+        "advisor_type": "context_pruning",
+        "agent_id": "market_researcher",
+        "agent_name": "Market Researcher",
+        "provider": "openai",
+        "model": "gpt-4o",
+        "headline": "Context Length Optimization: Extreme 115:1 Input-to-Output Ratio",
+        "detail": "Spans for this agent average 3,800 input tokens for only 33 output tokens (115:1 ratio). Trimming redundant RAG search chunks or applying semantic reranking can safely reduce input context by 35% without losing factual recall.",
+        "recommended_action": "Apply semantic reranking (e.g. FlashRank or Cohere Rerank) to inject the top-3 high-relevance chunks instead of raw top-10 chunks.",
+        "code_example": (
+            "// RAG Context Pruning via Semantic Reranking\n"
+            "const rerankedChunks = await reranker.rank({\n"
+            "  query: researchTopic,\n"
+            "  documents: rawRetrievedDocuments,\n"
+            "  topN: 3 // Keep only top 3 most relevant chunks\n"
+            "});\n"
+            "const compactContext = rerankedChunks.map(c => c.text).join('\\n---\\n');"
+        ),
+        "repeated_prompt_pct": 0.0,
+        "static_token_count": 0,
+        "input_to_output_ratio": 115.2,
+        "avg_input_tokens": 3800,
+        "avg_output_tokens": 33,
+        "sample_call_count": 210,
+        "estimated_monthly_calls": 6300,
+        "estimated_cost_reduction_pct": 35.0,
+        "estimated_monthly_savings_usd": 512.00,
+        "estimated_monthly_savings_inr": 42752.00,
+    },
+    {
+        "advisor_type": "prompt_caching",
+        "agent_id": "customer_support_bot",
+        "agent_name": "Customer Support Bot",
+        "provider": "openai",
+        "model": "gpt-4o-mini",
+        "headline": "Enable OpenAI Prefix Caching: 91% of calls share a 1,850-token knowledge preamble",
+        "detail": "This agent sends the same 1,850-token customer service guidelines and FAQ routing prompt on 91% of turns. Structuring static instructions as the prompt prefix automatically activates OpenAI 50% cached prompt pricing.",
+        "recommended_action": "Ensure static FAQ guidelines are placed at the very start of the messages array so prefix matching triggers consistently.",
+        "code_example": (
+            "// OpenAI Automatic Prefix Caching (50% discount on prefix >= 1024 tokens)\n"
+            "const completion = await openai.chat.completions.create({\n"
+            "  model: 'gpt-4o-mini',\n"
+            "  messages: [\n"
+            "    { role: 'system', content: STATIC_SUPPORT_PREAMBLE }, // >= 1024 tokens\n"
+            "    { role: 'user', content: customerMessage }\n"
+            "  ]\n"
+            "});"
+        ),
+        "repeated_prompt_pct": 91.0,
+        "static_token_count": 1850,
+        "input_to_output_ratio": 0.0,
+        "avg_input_tokens": 2100,
+        "avg_output_tokens": 95,
+        "sample_call_count": 1450,
+        "estimated_monthly_calls": 43500,
+        "estimated_cost_reduction_pct": 41.0,
+        "estimated_monthly_savings_usd": 295.40,
+        "estimated_monthly_savings_inr": 24665.00,
+    },
+    {
+        "advisor_type": "context_pruning",
+        "agent_id": "diagnosis_assistant",
+        "agent_name": "Medical Triage Assistant",
+        "provider": "anthropic",
+        "model": "claude-3-5-sonnet",
+        "headline": "Context Length Optimization: Redundant 4,200-Token Clinical Schema Declarations",
+        "detail": "Spans include full ICD-10 ontology and JSON schema declarations on every single symptom turn, yielding a 98:1 input-to-output ratio. Pruning to lean field definitions saves 35% of token volume.",
+        "recommended_action": "Compress static schema definitions into concise typescript-style compact notations.",
+        "code_example": (
+            "// Schema Definition Compacting\n"
+            "// Before: 4,200 tokens of verbose JSON schema definitions\n"
+            "// After: Compact TypeScript notation (saving 65% schema tokens):\n"
+            "const LEAN_SCHEMA = `type SymptomReport = { id: string; symptoms: string[]; severity: 1..5; red_flags: string[] };`;"
+        ),
+        "repeated_prompt_pct": 0.0,
+        "static_token_count": 0,
+        "input_to_output_ratio": 97.7,
+        "avg_input_tokens": 4200,
+        "avg_output_tokens": 43,
+        "sample_call_count": 180,
+        "estimated_monthly_calls": 5400,
+        "estimated_cost_reduction_pct": 35.0,
+        "estimated_monthly_savings_usd": 240.00,
+        "estimated_monthly_savings_inr": 20040.00,
+    },
+]
+
+
+@router.get("/v1/analytics/cost-optimization")
+async def get_cost_optimization_advisories(
+    api_key: ApiKey = Depends(authenticate),
+) -> dict[str, Any]:
+    """Retrieve actionable cost optimization advisories for prompt caching and context pruning with estimated INR savings."""
+    total_inr = round(sum(o["estimated_monthly_savings_inr"] for o in MOCK_COST_OPTIMIZATIONS), 2)
+    total_usd = round(sum(o["estimated_monthly_savings_usd"] for o in MOCK_COST_OPTIMIZATIONS), 2)
+    caching_count = sum(1 for o in MOCK_COST_OPTIMIZATIONS if o["advisor_type"] == "prompt_caching")
+    pruning_count = sum(1 for o in MOCK_COST_OPTIMIZATIONS if o["advisor_type"] == "context_pruning")
+
+    return {
+        "org_id": api_key.org_id,
+        "currency": "INR",
+        "usd_to_inr_rate": 83.5,
+        "summary": {
+            "total_potential_monthly_savings_inr": total_inr,
+            "total_potential_monthly_savings_usd": total_usd,
+            "total_opportunities_count": len(MOCK_COST_OPTIMIZATIONS),
+            "prompt_caching_opportunities_count": caching_count,
+            "context_pruning_opportunities_count": pruning_count,
+            "top_opportunity_headline": MOCK_COST_OPTIMIZATIONS[0]["headline"],
+            "top_opportunity_savings_inr": MOCK_COST_OPTIMIZATIONS[0]["estimated_monthly_savings_inr"],
+        },
+        "opportunities": MOCK_COST_OPTIMIZATIONS,
+    }
+
+
+

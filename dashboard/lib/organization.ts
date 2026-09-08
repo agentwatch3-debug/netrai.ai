@@ -1190,9 +1190,138 @@ function getMockResponse(path: string): any {
         primary_waste_driver: "Customer Support Bot",
       },
     };
+  if (path.startsWith("/v1/analytics/cost-optimization")) {
+    return {
+      org_id: "org_dev_demo",
+      currency: "INR",
+      usd_to_inr_rate: 83.5,
+      summary: {
+        total_potential_monthly_savings_inr: 145782.0,
+        total_potential_monthly_savings_usd: 1745.9,
+        total_opportunities_count: 4,
+        prompt_caching_opportunities_count: 2,
+        context_pruning_opportunities_count: 2,
+        top_opportunity_headline: "Enable Anthropic Prompt Caching: 94% of calls share a 2,400-token system prompt",
+        top_opportunity_savings_inr: 58325.0,
+      },
+      opportunities: [
+        {
+          advisor_type: "prompt_caching",
+          agent_id: "refund_approval_agent",
+          agent_name: "Refund Approval Agent",
+          provider: "anthropic",
+          model: "claude-3-5-sonnet",
+          headline: "Enable Anthropic Prompt Caching: 94% of calls share a 2,400-token system prompt",
+          detail: "This agent sends the same 2,400-token financial policy & compliance instructions on 94% of calls. Enabling prompt caching on Anthropic (Claude 3.5 Sonnet) will yield a 90% discount on cache hits, reducing monthly token expenditure by 45.2%.",
+          recommended_action: "Add cache_control: {'type': 'ephemeral'} to the system prompt block in your Anthropic messages API payload.",
+          code_example: `// Anthropic Prompt Caching (90% discount on cache hits)
+const response = await anthropic.messages.create({
+  model: 'claude-3-5-sonnet-20241022',
+  system: [
+    {
+      type: 'text',
+      text: FINANCIAL_COMPLIANCE_POLICY,
+      cache_control: { type: 'ephemeral' } // Caches static prompt
+    }
+  ],
+  messages: [{ role: 'user', content: userRefundQuery }]
+});`,
+          repeated_prompt_pct: 94.0,
+          static_token_count: 2400,
+          input_to_output_ratio: 0.0,
+          avg_input_tokens: 2650,
+          avg_output_tokens: 180,
+          sample_call_count: 320,
+          estimated_monthly_calls: 9600,
+          estimated_cost_reduction_pct: 45.2,
+          estimated_monthly_savings_usd: 698.5,
+          estimated_monthly_savings_inr: 58325.0,
+        },
+        {
+          advisor_type: "context_pruning",
+          agent_id: "market_researcher",
+          agent_name: "Market Researcher",
+          provider: "openai",
+          model: "gpt-4o",
+          headline: "Context Length Optimization: Extreme 115:1 Input-to-Output Ratio",
+          detail: "Spans for this agent average 3,800 input tokens for only 33 output tokens (115:1 ratio). Trimming redundant RAG search chunks or applying semantic reranking can safely reduce input context by 35% without losing factual recall.",
+          recommended_action: "Apply semantic reranking (e.g. FlashRank or Cohere Rerank) to inject the top-3 high-relevance chunks instead of raw top-10 chunks.",
+          code_example: `// RAG Context Pruning via Semantic Reranking
+const rerankedChunks = await reranker.rank({
+  query: researchTopic,
+  documents: rawRetrievedDocuments,
+  topN: 3 // Keep only top 3 most relevant chunks
+});
+const compactContext = rerankedChunks.map(c => c.text).join('\\n---\\n');`,
+          repeated_prompt_pct: 0.0,
+          static_token_count: 0,
+          input_to_output_ratio: 115.2,
+          avg_input_tokens: 3800,
+          avg_output_tokens: 33,
+          sample_call_count: 210,
+          estimated_monthly_calls: 6300,
+          estimated_cost_reduction_pct: 35.0,
+          estimated_monthly_savings_usd: 512.0,
+          estimated_monthly_savings_inr: 42752.0,
+        },
+        {
+          advisor_type: "prompt_caching",
+          agent_id: "customer_support_bot",
+          agent_name: "Customer Support Bot",
+          provider: "openai",
+          model: "gpt-4o-mini",
+          headline: "Enable OpenAI Prefix Caching: 91% of calls share a 1,850-token knowledge preamble",
+          detail: "This agent sends the same 1,850-token customer service guidelines and FAQ routing prompt on 91% of turns. Structuring static instructions as the prompt prefix automatically activates OpenAI 50% cached prompt pricing.",
+          recommended_action: "Ensure static FAQ guidelines are placed at the very start of the messages array so prefix matching triggers consistently.",
+          code_example: `// OpenAI Automatic Prefix Caching (50% discount on prefix >= 1024 tokens)
+const completion = await openai.chat.completions.create({
+  model: 'gpt-4o-mini',
+  messages: [
+    { role: 'system', content: STATIC_SUPPORT_PREAMBLE }, // >= 1024 tokens
+    { role: 'user', content: customerMessage }
+  ]
+});`,
+          repeated_prompt_pct: 91.0,
+          static_token_count: 1850,
+          input_to_output_ratio: 0.0,
+          avg_input_tokens: 2100,
+          avg_output_tokens: 95,
+          sample_call_count: 1450,
+          estimated_monthly_calls: 43500,
+          estimated_cost_reduction_pct: 41.0,
+          estimated_monthly_savings_usd: 295.4,
+          estimated_monthly_savings_inr: 24665.0,
+        },
+        {
+          advisor_type: "context_pruning",
+          agent_id: "diagnosis_assistant",
+          agent_name: "Medical Triage Assistant",
+          provider: "anthropic",
+          model: "claude-3-5-sonnet",
+          headline: "Context Length Optimization: Redundant 4,200-Token Clinical Schema Declarations",
+          detail: "Spans include full ICD-10 ontology and JSON schema declarations on every single symptom turn, yielding a 98:1 input-to-output ratio. Pruning to lean field definitions saves 35% of token volume.",
+          recommended_action: "Compress static schema definitions into concise typescript-style compact notations.",
+          code_example: `// Schema Definition Compacting
+// Before: 4,200 tokens of verbose JSON schema definitions
+// After: Compact TypeScript notation (saving 65% schema tokens):
+const LEAN_SCHEMA = \`type SymptomReport = { id: string; symptoms: string[]; severity: 1..5; red_flags: string[] };\`;`,
+          repeated_prompt_pct: 0.0,
+          static_token_count: 0,
+          input_to_output_ratio: 97.7,
+          avg_input_tokens: 4200,
+          avg_output_tokens: 43,
+          sample_call_count: 180,
+          estimated_monthly_calls: 5400,
+          estimated_cost_reduction_pct: 35.0,
+          estimated_monthly_savings_usd: 240.0,
+          estimated_monthly_savings_inr: 20040.0,
+        },
+      ],
+    };
   }
 
   if (path.startsWith("/v1/quotas/check")) {
+
 
     return {
       allowed: true,
