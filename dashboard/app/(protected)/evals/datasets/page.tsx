@@ -59,29 +59,7 @@ export default function GoldenDatasetsPage() {
           const first = list[0];
           setSelectedDataset({
             ...first,
-            cases: [
-              {
-                id: 1,
-                case_id: "cs_01_order_status",
-                eval_type: "exact",
-                input: { query: "Where is my order #88921?" },
-                expected_output: { status: "shipped", tracking_number: "TRK-88921-IN", eta_days: 2 },
-              },
-              {
-                id: 2,
-                case_id: "cs_02_return_policy",
-                eval_type: "semantic",
-                input: { query: "What is the return window for electronics?" },
-                expected_output: "Items can be returned within 30 days of delivery with original packaging and invoice.",
-              },
-              {
-                id: 3,
-                case_id: "cs_03_refund_escalation",
-                eval_type: "llm_judge",
-                input: { query: "I was double charged on my card! Fix this immediately." },
-                expected_criteria: "Must apologize for the inconvenience, confirm refund request within 3-5 business days, and provide support ticket reference.",
-              },
-            ],
+            cases: first.cases || [],
           });
         }
       }

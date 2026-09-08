@@ -49,7 +49,7 @@ export default function OutputPoliciesPage() {
   const [togglingId, setTogglingId] = useState<number | null>(null);
 
   // Playground state
-  const [testText, setTestText] = useState("We can offer you a personal loan at 8.5% APR immediately.");
+  const [testText, setTestText] = useState("");
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
 

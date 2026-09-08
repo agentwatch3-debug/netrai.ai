@@ -35,12 +35,12 @@ export default function EnterpriseSSOPage() {
 
   // Form states
   const [provider, setProvider] = useState("okta");
-  const [domain, setDomain] = useState("acmewatch.com");
-  const [idpEntityId, setIdpEntityId] = useState("http://www.okta.com/exk88921aZ012");
-  const [idpSsoUrl, setIdpSsoUrl] = useState("https://acmewatch.okta.com/app/agentwatch/exk88921aZ012/sso/saml");
-  const [idpCertificate, setIdpCertificate] = useState("-----BEGIN CERTIFICATE-----\nMIIDqjCCApKgAwIBAgIGAZ20...\n-----END CERTIFICATE-----");
-  const [enforceSso, setEnforceSso] = useState(true);
-  const [allowIdpInitiated, setAllowIdpInitiated] = useState(true);
+  const [domain, setDomain] = useState("");
+  const [idpEntityId, setIdpEntityId] = useState("");
+  const [idpSsoUrl, setIdpSsoUrl] = useState("");
+  const [idpCertificate, setIdpCertificate] = useState("");
+  const [enforceSso, setEnforceSso] = useState(false);
+  const [allowIdpInitiated, setAllowIdpInitiated] = useState(false);
 
   async function loadData() {
     setLoading(true);
