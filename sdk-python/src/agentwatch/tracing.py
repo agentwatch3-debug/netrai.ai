@@ -12,6 +12,7 @@ from uuid import uuid4
 
 from .config import get_config
 from .exceptions import (
+    ClarificationRequired,
     InjectionDetected,
     LowConfidenceResponse,
     OutputPolicyViolation,
@@ -33,6 +34,15 @@ current_session_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
 current_user_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("agentwatch_user_id", default=None)
 current_end_user_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("agentwatch_end_user_id", default=None)
 current_consent_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("agentwatch_consent_id", default=None)
+current_intent_confidence_threshold: contextvars.ContextVar[float | None] = contextvars.ContextVar(
+    "agentwatch_intent_confidence_threshold", default=None
+)
+current_intent_confidence: contextvars.ContextVar[float | None] = contextvars.ContextVar(
+    "agentwatch_intent_confidence", default=None
+)
+current_planned_action: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "agentwatch_planned_action", default=None
+)
 
 
 def _safe(value: Any) -> Any:
@@ -73,9 +83,57 @@ def _extract_text_content(output: Any) -> str | None:
         first = content[0]
         if hasattr(first, "text"):
             return str(first.text)
-        if isinstance(first, dict) and "text" in first:
-            return str(first["text"])
+    if isinstance(output, dict):
+        for k in ("content", "text", "response", "message"):
+            if k in output and isinstance(output[k], str):
+                return output[k]
     return None
+
+
+def _extract_intent_confidence_and_action(response: Any) -> tuple[float | None, str | None]:
+    """Extract agent-provided intent confidence score and planned action from LLM response."""
+    if response is None:
+        return None, None
+
+    if isinstance(response, dict):
+        conf = (
+            response.get("confidence")
+            if response.get("confidence") is not None
+            else response.get("intent_confidence")
+            if response.get("intent_confidence") is not None
+            else response.get("confidence_score")
+        )
+        action = (
+            response.get("planned_action")
+            or response.get("action")
+            or response.get("tool")
+            or response.get("tool_name")
+        )
+        try:
+            return (float(conf) if conf is not None else None), (str(action) if action else None)
+        except (ValueError, TypeError):
+            return None, (str(action) if action else None)
+
+    if isinstance(response, tuple) and len(response) >= 2:
+        if isinstance(response[1], (int, float)):
+            return float(response[1]), str(response[0])
+        if isinstance(response[0], (int, float)):
+            return float(response[0]), str(response[1])
+
+    conf = getattr(response, "confidence", None) or getattr(response, "intent_confidence", None)
+    action = (
+        getattr(response, "planned_action", None)
+        or getattr(response, "action", None)
+        or getattr(response, "tool", None)
+    )
+    if conf is not None:
+        try:
+            return float(conf), (str(action) if action else None)
+        except (ValueError, TypeError):
+            pass
+
+    return None, (str(action) if action else None)
+
 
 
 def compute_output_consistency(outputs: list[Any]) -> float:
@@ -395,6 +453,7 @@ class TraceLLM(_SpanScope):
         name: str | None = None,
         model: str | None = None,
         *,
+        intent_confidence_threshold: float | None = None,
         consistency_check: bool = False,
         consistency_samples: int = 3,
         consistency_temperature: float = 0.7,
@@ -413,6 +472,7 @@ class TraceLLM(_SpanScope):
         super().__init__(span_name, "llm_call", metadata=metadata, **kwargs)
         self.model = model
         self.policy_mode = policy_mode
+        self.intent_confidence_threshold = intent_confidence_threshold
         self.consistency_check = consistency_check
         self.consistency_samples = max(2, consistency_samples) if consistency_samples else 3
         self.consistency_temperature = consistency_temperature
@@ -456,15 +516,21 @@ class TraceLLM(_SpanScope):
 
     def __enter__(self) -> "TraceLLM":
         self._validate_tier()
+        if self.intent_confidence_threshold is not None:
+            current_intent_confidence_threshold.set(self.intent_confidence_threshold)
         super().__enter__()
         self.check_input_guard()
         return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool | None:
+        return super().__exit__(exc_type, exc_val, exc_tb)
 
     def __call__(self, func: Callable[P, R]) -> Callable[P, R]:
         def scope_for_call(args: Any, kwargs: Any) -> "TraceLLM":
             return TraceLLM(
                 name=self.name,
                 model=self.model,
+                intent_confidence_threshold=self.intent_confidence_threshold,
                 consistency_check=self.consistency_check,
                 consistency_samples=self.consistency_samples,
                 consistency_temperature=self.consistency_temperature,
@@ -544,6 +610,23 @@ class TraceLLM(_SpanScope):
                         "consistency_samples": len(all_outputs),
                         "consistency_temperature": self.consistency_temperature,
                     })
+
+                if self.intent_confidence_threshold is not None:
+                    conf, planned_act = _extract_intent_confidence_and_action(response)
+                    if conf is not None:
+                        current_intent_confidence.set(conf)
+                        scope.metadata["intent_confidence"] = conf
+                        scope.metadata["intent_confidence_threshold"] = self.intent_confidence_threshold
+                        if planned_act:
+                            current_planned_action.set(planned_act)
+                            scope.metadata["planned_action"] = planned_act
+                        if conf < self.intent_confidence_threshold:
+                            scope.metadata["action_taken"] = "clarification_requested"
+                            scope.metadata["clarification_requested"] = True
+                            scope.metadata["clarification_required"] = True
+                        else:
+                            scope.metadata["action_taken"] = planned_act or "tool_executed"
+                            scope.metadata["clarification_requested"] = False
 
                 # Inline response gating check
                 if self.eval_gate:
@@ -656,6 +739,23 @@ class TraceLLM(_SpanScope):
                     "consistency_temperature": self.consistency_temperature,
                 })
 
+            if self.intent_confidence_threshold is not None:
+                conf, planned_act = _extract_intent_confidence_and_action(response)
+                if conf is not None:
+                    current_intent_confidence.set(conf)
+                    scope.metadata["intent_confidence"] = conf
+                    scope.metadata["intent_confidence_threshold"] = self.intent_confidence_threshold
+                    if planned_act:
+                        current_planned_action.set(planned_act)
+                        scope.metadata["planned_action"] = planned_act
+                    if conf < self.intent_confidence_threshold:
+                        scope.metadata["action_taken"] = "clarification_requested"
+                        scope.metadata["clarification_requested"] = True
+                        scope.metadata["clarification_required"] = True
+                    else:
+                        scope.metadata["action_taken"] = planned_act or "tool_executed"
+                        scope.metadata["clarification_requested"] = False
+
             # Inline response gating check
             if self.eval_gate:
                 ctx = self.context or kwargs.get("context")
@@ -727,6 +827,7 @@ def trace_llm(
     name: str | None = None,
     model: str | None = None,
     *,
+    intent_confidence_threshold: float | None = None,
     consistency_check: bool = False,
     consistency_samples: int = 3,
     consistency_temperature: float = 0.7,
@@ -739,11 +840,13 @@ def trace_llm(
     judge_model: str = "gpt-4o-mini",
     **kwargs: Any,
 ) -> TraceLLM:
-    """Trace an LLM execution, enforcing guardrails, consistency checks, and inline eval gates.
+    """Trace an LLM execution, enforcing guardrails, consistency checks, inline eval gates, and intent confidence checks.
 
     Parameters:
     - name: Optional span name (defaults to "llm.<model>" or "llm.call").
     - model: Optional model identifier (e.g. "gpt-4o", "claude-3-5-sonnet").
+    - intent_confidence_threshold: Opt-in float threshold (e.g. 0.7). Requires agent to supply confidence score;
+      if confidence is below threshold, logs span with action_taken: 'clarification_requested' and intercepts tool calls.
     - eval_gate: Opt-in flag to run synchronous inline response evaluation before returning.
     - gate_score_type: "faithfulness" | "factuality" (auto-detected from context if omitted).
     - gate_threshold: Minimum acceptable evaluation score (default: 0.7).
@@ -759,6 +862,7 @@ def trace_llm(
     return TraceLLM(
         name=name,
         model=model,
+        intent_confidence_threshold=intent_confidence_threshold,
         consistency_check=consistency_check,
         consistency_samples=consistency_samples,
         consistency_temperature=consistency_temperature,
@@ -782,7 +886,33 @@ def trace_tool(name: str | None = None, **kwargs: Any) -> Callable[[Callable[P, 
             @functools.wraps(func)
             async def async_wrapped(*args: P.args, **call_kwargs: P.kwargs) -> R:
                 active_agent = kwargs.get("agent_id") or current_agent_id.get()
+                threshold = current_intent_confidence_threshold.get()
+                conf = current_intent_confidence.get()
+                if threshold is not None and conf is not None and conf < threshold:
+                    current_intent_confidence.set(None)
+                    current_intent_confidence_threshold.set(None)
+                    with _SpanScope(tool_name, "tool_call", agent_id=active_agent, input_data={"args": _safe(args), "kwargs": _safe(call_kwargs)}, **kwargs) as scope:
+                        scope.metadata["action_taken"] = "clarification_requested"
+                        scope.metadata["clarification_requested"] = True
+                        scope.metadata["intent_confidence"] = conf
+                        scope.metadata["intent_confidence_threshold"] = threshold
+                        scope.metadata["clarification_required"] = True
+                        scope.finish(output={"action_taken": "clarification_requested", "tool": tool_name, "intent_confidence": conf, "threshold": threshold})
+                    raise ClarificationRequired(
+                        f"Tool '{tool_name}' execution skipped: intent confidence {conf:.2f} is below threshold {threshold:.2f}. Clarification requested.",
+                        confidence=conf,
+                        threshold=threshold,
+                        tool=tool_name,
+                        action_taken="clarification_requested",
+                    )
                 with _SpanScope(tool_name, "tool_call", agent_id=active_agent, input_data={"args": _safe(args), "kwargs": _safe(call_kwargs)}, **kwargs) as scope:
+                    if threshold is not None and conf is not None:
+                        scope.metadata["intent_confidence"] = conf
+                        scope.metadata["intent_confidence_threshold"] = threshold
+                        scope.metadata["action_taken"] = "tool_executed"
+                        scope.metadata["clarification_requested"] = False
+                        current_intent_confidence.set(None)
+                        current_intent_confidence_threshold.set(None)
                     policy_cache.check_tool_allowed(tool_name, active_agent)
                     result = await func(*args, **call_kwargs)
                     scope.finish(output=result)
@@ -791,7 +921,33 @@ def trace_tool(name: str | None = None, **kwargs: Any) -> Callable[[Callable[P, 
         @functools.wraps(func)
         def wrapped(*args: P.args, **call_kwargs: P.kwargs) -> R:
             active_agent = kwargs.get("agent_id") or current_agent_id.get()
+            threshold = current_intent_confidence_threshold.get()
+            conf = current_intent_confidence.get()
+            if threshold is not None and conf is not None and conf < threshold:
+                current_intent_confidence.set(None)
+                current_intent_confidence_threshold.set(None)
+                with _SpanScope(tool_name, "tool_call", agent_id=active_agent, input_data={"args": _safe(args), "kwargs": _safe(call_kwargs)}, **kwargs) as scope:
+                    scope.metadata["action_taken"] = "clarification_requested"
+                    scope.metadata["clarification_requested"] = True
+                    scope.metadata["intent_confidence"] = conf
+                    scope.metadata["intent_confidence_threshold"] = threshold
+                    scope.metadata["clarification_required"] = True
+                    scope.finish(output={"action_taken": "clarification_requested", "tool": tool_name, "intent_confidence": conf, "threshold": threshold})
+                raise ClarificationRequired(
+                    f"Tool '{tool_name}' execution skipped: intent confidence {conf:.2f} is below threshold {threshold:.2f}. Clarification requested.",
+                    confidence=conf,
+                    threshold=threshold,
+                    tool=tool_name,
+                    action_taken="clarification_requested",
+                )
             with _SpanScope(tool_name, "tool_call", agent_id=active_agent, input_data={"args": _safe(args), "kwargs": _safe(call_kwargs)}, **kwargs) as scope:
+                if threshold is not None and conf is not None:
+                    scope.metadata["intent_confidence"] = conf
+                    scope.metadata["intent_confidence_threshold"] = threshold
+                    scope.metadata["action_taken"] = "tool_executed"
+                    scope.metadata["clarification_requested"] = False
+                    current_intent_confidence.set(None)
+                    current_intent_confidence_threshold.set(None)
                 policy_cache.check_tool_allowed(tool_name, active_agent)
                 result = func(*args, **call_kwargs)
                 scope.finish(output=result)

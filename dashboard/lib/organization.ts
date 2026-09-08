@@ -766,11 +766,11 @@ function getMockResponse(path: string): any {
   if (path.startsWith("/v1/agents/graph")) {
     return {
       nodes: [
-        { id: "orchestrator_agent", label: "Orchestrator Agent", role: "Coordinator", total_calls: 3420, avg_latency_ms: 680, error_count: 8, error_rate: 0.23, total_cost_usd: 12.45, status_color: "emerald" },
-        { id: "research_subagent", label: "Research Subagent", role: "Fact Finder", total_calls: 1820, avg_latency_ms: 1150, error_count: 12, error_rate: 0.65, total_cost_usd: 8.90, status_color: "emerald" },
-        { id: "code_reviewer", label: "Code Reviewer", role: "Static Analysis", total_calls: 940, avg_latency_ms: 920, error_count: 4, error_rate: 0.42, total_cost_usd: 4.15, status_color: "emerald" },
-        { id: "sql_analyst", label: "SQL Data Analyst", role: "Query Generator", total_calls: 650, avg_latency_ms: 1420, error_count: 48, error_rate: 7.38, total_cost_usd: 6.80, status_color: "rose" },
-        { id: "compliance_guard", label: "Compliance Guard", role: "Perimeter Auditor", total_calls: 1240, avg_latency_ms: 310, error_count: 1, error_rate: 0.08, total_cost_usd: 1.95, status_color: "emerald" },
+        { id: "orchestrator_agent", label: "Orchestrator Agent", role: "Coordinator", total_calls: 3420, avg_latency_ms: 680, error_count: 8, error_rate: 0.23, total_cost_usd: 12.45, clarification_count: 280, clarification_rate: 8.19, guessing_risk: false, status_color: "emerald" },
+        { id: "research_subagent", label: "Research Subagent", role: "Fact Finder", total_calls: 1820, avg_latency_ms: 1150, error_count: 12, error_rate: 0.65, total_cost_usd: 8.90, clarification_count: 264, clarification_rate: 14.51, guessing_risk: false, status_color: "emerald" },
+        { id: "code_reviewer", label: "Code Reviewer", role: "Static Analysis", total_calls: 940, avg_latency_ms: 920, error_count: 4, error_rate: 0.42, total_cost_usd: 4.15, clarification_count: 32, clarification_rate: 3.40, guessing_risk: false, status_color: "emerald" },
+        { id: "sql_analyst", label: "SQL Data Analyst", role: "Query Generator", total_calls: 650, avg_latency_ms: 1420, error_count: 48, error_rate: 7.38, total_cost_usd: 6.80, clarification_count: 0, clarification_rate: 0.0, guessing_risk: true, status_color: "rose" },
+        { id: "compliance_guard", label: "Compliance Guard", role: "Perimeter Auditor", total_calls: 1240, avg_latency_ms: 310, error_count: 1, error_rate: 0.08, total_cost_usd: 1.95, clarification_count: 15, clarification_rate: 1.21, guessing_risk: false, status_color: "emerald" },
       ],
       edges: [
         { id: "orchestrator->research", source: "orchestrator_agent", target: "research_subagent", call_count: 1820, avg_latency_ms: 1150, error_count: 12, stroke_width: 5 },

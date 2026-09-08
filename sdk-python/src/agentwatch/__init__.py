@@ -1,6 +1,7 @@
 from .config import AgentWatchConfig, configure
 from .evals import score
 from .exceptions import (
+    ClarificationRequired,
     InjectionDetected,
     LowConfidenceResponse,
     OutputPolicyViolation,
@@ -35,6 +36,7 @@ from .tracing import (
 __all__ = [
     "AgentWatchCallbackHandler",
     "AgentWatchConfig",
+    "ClarificationRequired",
     "InjectionDetected",
     "LowConfidenceResponse",
     "OutputPolicyViolation",

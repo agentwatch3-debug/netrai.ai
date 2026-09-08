@@ -41,7 +41,8 @@ async def get_multi_agent_graph(time_window: str = "24h", api_key: ApiKey = Depe
                 count(*) AS total_calls,
                 round(avg(latency_ms), 1) AS avg_latency_ms,
                 countIf(status = 'error') AS error_count,
-                round(sum(cost_usd), 4) AS total_cost_usd
+                round(sum(cost_usd), 4) AS total_cost_usd,
+                countIf(status = 'clarification_requested' OR position(metadata, 'clarification_requested') > 0) AS clarification_count
             FROM spans
             WHERE org_id = {org_id:String}
               AND started_at >= now() - INTERVAL 24 HOUR
@@ -54,7 +55,10 @@ async def get_multi_agent_graph(time_window: str = "24h", api_key: ApiKey = Depe
                 for r in node_rows:
                     total_c = r[1]
                     err_c = r[3]
+                    clar_c = r[5] if len(r) > 5 else 0
                     err_rate = (err_c / total_c) if total_c > 0 else 0.0
+                    clar_rate = (clar_c / total_c) * 100 if total_c > 0 else 0.0
+                    guessing_risk = (clar_rate == 0.0 and (err_rate > 0.02 or total_c > 50))
                     nodes.append({
                         "id": r[0],
                         "label": r[0],
@@ -63,6 +67,9 @@ async def get_multi_agent_graph(time_window: str = "24h", api_key: ApiKey = Depe
                         "error_count": err_c,
                         "error_rate": round(err_rate * 100, 2),
                         "total_cost_usd": r[4],
+                        "clarification_count": clar_c,
+                        "clarification_rate": round(clar_rate, 2),
+                        "guessing_risk": guessing_risk,
                         "status_color": "rose" if err_rate > 0.05 else "amber" if err_rate > 0.01 else "emerald",
                     })
 
@@ -83,11 +90,11 @@ async def get_multi_agent_graph(time_window: str = "24h", api_key: ApiKey = Depe
             logger.warning("Clickhouse multi-agent graph query failed: %s", e)
 
     mock_nodes = [
-        {"id": "orchestrator_agent", "label": "Orchestrator Agent", "role": "Coordinator", "total_calls": 3420, "avg_latency_ms": 680, "error_count": 8, "error_rate": 0.23, "total_cost_usd": 12.45, "status_color": "emerald"},
-        {"id": "research_subagent", "label": "Research Subagent", "role": "Fact Finder", "total_calls": 1820, "avg_latency_ms": 1150, "error_count": 12, "error_rate": 0.65, "total_cost_usd": 8.90, "status_color": "emerald"},
-        {"id": "code_reviewer", "label": "Code Reviewer", "role": "Static Analysis", "total_calls": 940, "avg_latency_ms": 920, "error_count": 4, "error_rate": 0.42, "total_cost_usd": 4.15, "status_color": "emerald"},
-        {"id": "sql_analyst", "label": "SQL Data Analyst", "role": "Query Generator", "total_calls": 650, "avg_latency_ms": 1420, "error_count": 48, "error_rate": 7.38, "total_cost_usd": 6.80, "status_color": "rose"},
-        {"id": "compliance_guard", "label": "Compliance Guard", "role": "Perimeter Auditor", "total_calls": 1240, "avg_latency_ms": 310, "error_count": 1, "error_rate": 0.08, "total_cost_usd": 1.95, "status_color": "emerald"},
+        {"id": "orchestrator_agent", "label": "Orchestrator Agent", "role": "Coordinator", "total_calls": 3420, "avg_latency_ms": 680, "error_count": 8, "error_rate": 0.23, "total_cost_usd": 12.45, "clarification_count": 280, "clarification_rate": 8.19, "guessing_risk": False, "status_color": "emerald"},
+        {"id": "research_subagent", "label": "Research Subagent", "role": "Fact Finder", "total_calls": 1820, "avg_latency_ms": 1150, "error_count": 12, "error_rate": 0.65, "total_cost_usd": 8.90, "clarification_count": 264, "clarification_rate": 14.51, "guessing_risk": False, "status_color": "emerald"},
+        {"id": "code_reviewer", "label": "Code Reviewer", "role": "Static Analysis", "total_calls": 940, "avg_latency_ms": 920, "error_count": 4, "error_rate": 0.42, "total_cost_usd": 4.15, "clarification_count": 32, "clarification_rate": 3.40, "guessing_risk": False, "status_color": "emerald"},
+        {"id": "sql_analyst", "label": "SQL Data Analyst", "role": "Query Generator", "total_calls": 650, "avg_latency_ms": 1420, "error_count": 48, "error_rate": 7.38, "total_cost_usd": 6.80, "clarification_count": 0, "clarification_rate": 0.0, "guessing_risk": True, "status_color": "rose"},
+        {"id": "compliance_guard", "label": "Compliance Guard", "role": "Perimeter Auditor", "total_calls": 1240, "avg_latency_ms": 310, "error_count": 1, "error_rate": 0.08, "total_cost_usd": 1.95, "clarification_count": 15, "clarification_rate": 1.21, "guessing_risk": False, "status_color": "emerald"},
     ]
 
     mock_edges = [

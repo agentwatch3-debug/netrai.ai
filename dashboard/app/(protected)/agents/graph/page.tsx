@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Activity, ArrowRight, ArrowUpRight, Bot, Cpu, DollarSign, Layers, Network, RefreshCw, Share2, ShieldAlert, Sparkles, Zap } from "lucide-react";
+import { Activity, AlertTriangle, ArrowRight, ArrowUpRight, Bot, CheckCircle2, Cpu, DollarSign, HelpCircle, Layers, Network, RefreshCw, Share2, ShieldAlert, Sparkles, Target, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,9 @@ interface AgentNode {
   error_count: number;
   error_rate: number;
   total_cost_usd: number;
+  clarification_count?: number;
+  clarification_rate?: number;
+  guessing_risk?: boolean;
   status_color: "emerald" | "amber" | "rose";
   x?: number;
   y?: number;
@@ -120,7 +123,10 @@ export default function MultiAgentGraphPage() {
   const totalCalls = nodes.reduce((acc, n) => acc + n.total_calls, 0);
   const totalCost = nodes.reduce((acc, n) => acc + n.total_cost_usd, 0);
   const totalErrors = nodes.reduce((acc, n) => acc + n.error_count, 0);
+  const totalClarifications = nodes.reduce((acc, n) => acc + (n.clarification_count || 0), 0);
   const overallErrorRate = totalCalls > 0 ? (totalErrors / totalCalls) * 100 : 0;
+  const overallClarificationRate = totalCalls > 0 ? (totalClarifications / totalCalls) * 100 : 0;
+  const guessingRiskAgents = nodes.filter((n) => n.clarification_rate === 0.0 || n.guessing_risk);
 
   return (
     <div className="space-y-6">
@@ -128,7 +134,7 @@ export default function MultiAgentGraphPage() {
         <div>
           <h1 className="text-xl font-semibold text-white">Multi-Agent Network Topology Graph</h1>
           <p className="text-sm text-slate-400">
-            Real-time visual hierarchy of agent-to-agent delegations, call velocities, latency, and error rates.
+            Real-time visual hierarchy of agent-to-agent delegations, call velocities, latency, clarification rates, and guessing risks.
           </p>
         </div>
 
@@ -157,7 +163,7 @@ export default function MultiAgentGraphPage() {
       </div>
 
       {/* Hero Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-5">
         <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
           <span className="text-[11px] text-slate-400 uppercase font-semibold">Active Agents</span>
           <p className="text-2xl font-bold text-white font-mono">{nodes.length}</p>
@@ -182,6 +188,16 @@ export default function MultiAgentGraphPage() {
           <span className="text-[11px] text-slate-400 uppercase font-semibold">Total Mesh Cost</span>
           <p className="text-2xl font-bold text-amber-400 font-mono">${totalCost.toFixed(2)}</p>
           <p className="text-[10px] text-slate-500">Aggregated LLM token burn</p>
+        </Card>
+
+        <Card className="border-slate-800 bg-slate-900/40 p-4 space-y-1">
+          <span className="text-[11px] text-slate-400 uppercase font-semibold">Clarification Rate</span>
+          <p className={`text-2xl font-bold font-mono ${overallClarificationRate > 0 ? "text-sky-400" : "text-rose-400"}`}>
+            {overallClarificationRate.toFixed(2)}%
+          </p>
+          <p className="text-[10px] text-slate-500">
+            {guessingRiskAgents.length > 0 ? `${guessingRiskAgents.length} guessing risk (0% rate)` : "Healthy clarification"}
+          </p>
         </Card>
       </div>
 
@@ -487,7 +503,31 @@ export default function MultiAgentGraphPage() {
                     {selectedNode.error_count}
                   </span>
                 </div>
+                <div className="flex justify-between py-1 border-b border-slate-800/60">
+                  <span className="text-slate-400">Clarification Rate:</span>
+                  <span className={`font-bold ${(selectedNode.clarification_rate ?? 0) > 0 ? "text-sky-400" : "text-rose-400"}`}>
+                    {(selectedNode.clarification_rate ?? 0).toFixed(2)}% ({selectedNode.clarification_count ?? 0} calls)
+                  </span>
+                </div>
               </div>
+
+              {/* Guessing Risk Alert */}
+              {(selectedNode.clarification_rate === 0 || selectedNode.guessing_risk) ? (
+                <div className="rounded-lg border border-rose-900/60 bg-rose-950/20 p-3 space-y-1.5 text-xs">
+                  <div className="flex items-center gap-1.5 text-rose-400 font-semibold font-mono">
+                    <AlertTriangle size={13} />
+                    <span>0% Clarification (Guessing Risk)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    This agent has never requested clarification on ambiguous user queries. 0% clarification rate with non-zero error rate strongly signals blind guessing, driving expensive retry loops.
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-sky-900/60 bg-sky-950/20 p-2.5 text-xs text-slate-300 flex items-center gap-2 font-mono text-[11px]">
+                  <CheckCircle2 size={13} className="text-sky-400 shrink-0" />
+                  <span>Intent threshold active: Agent requests clarification on low confidence.</span>
+                </div>
+              )}
 
               <div className="space-y-2 pt-1">
                 <span className="text-[11px] font-semibold text-slate-400 uppercase">Connected Edges</span>
@@ -512,6 +552,83 @@ export default function MultiAgentGraphPage() {
           ) : null}
         </div>
       </div>
+
+      {/* Agent Clarification & Guessing Risk Overview Table */}
+      <Card className="border-slate-800 bg-slate-900/40 p-5 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+          <div className="flex items-center gap-2">
+            <HelpCircle size={16} className="text-sky-400" />
+            <h3 className="text-sm font-bold text-white">Agent Clarification Rates vs. Guessing Risk Analysis</h3>
+          </div>
+          <Badge className="bg-slate-950 text-slate-300 border-slate-800 text-[10px] font-mono">
+            SDK intent_confidence_threshold Policy
+          </Badge>
+        </div>
+
+        <p className="text-xs text-slate-400 leading-relaxed">
+          When <code className="text-sky-300">trace_llm(model, intent_confidence_threshold=0.7)</code> is enabled, agents returning intent confidence below threshold bypass tool execution and request clarification. Teams with <span className="text-rose-400 font-semibold">0% clarification rate</span> on ambiguous inputs are a strong signal of blind guessing, which correlates directly with costly multi-turn misunderstanding retry loops.
+        </p>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-mono">
+            <thead>
+              <tr className="border-b border-slate-800 text-slate-400 text-[11px]">
+                <th className="pb-2 font-semibold">Agent / ID</th>
+                <th className="pb-2 font-semibold">Role</th>
+                <th className="pb-2 font-semibold text-right">Invocations</th>
+                <th className="pb-2 font-semibold text-right">Clarifications</th>
+                <th className="pb-2 font-semibold text-right">Clarification Rate</th>
+                <th className="pb-2 font-semibold text-right">Error Rate</th>
+                <th className="pb-2 font-semibold text-center">Status / Assessment</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {nodes.map((node) => (
+                <tr key={node.id} className="hover:bg-slate-950/40 transition-colors">
+                  <td className="py-2.5 font-bold text-white">
+                    <button
+                      onClick={() => {
+                        setSelectedNode(node);
+                        setSelectedEdge(null);
+                      }}
+                      className="hover:text-sky-400 text-left"
+                    >
+                      {node.label}
+                      <span className="block text-[10px] font-normal text-slate-500">{node.id}</span>
+                    </button>
+                  </td>
+                  <td className="py-2.5 text-slate-300">{node.role || "Autonomous Agent"}</td>
+                  <td className="py-2.5 text-right text-slate-200">{node.total_calls.toLocaleString()}</td>
+                  <td className="py-2.5 text-right text-sky-400 font-semibold">
+                    {(node.clarification_count ?? 0).toLocaleString()}
+                  </td>
+                  <td className="py-2.5 text-right">
+                    <span className={`font-bold ${(node.clarification_rate ?? 0) > 0 ? "text-sky-400" : "text-rose-400"}`}>
+                      {(node.clarification_rate ?? 0).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="py-2.5 text-right">
+                    <span className={node.error_rate > 5 ? "text-red-400 font-bold" : "text-emerald-400"}>
+                      {node.error_rate}%
+                    </span>
+                  </td>
+                  <td className="py-2.5 text-center">
+                    {(node.clarification_rate === 0 || node.guessing_risk) ? (
+                      <Badge className="bg-rose-950/80 text-rose-300 border-rose-800 text-[10px]">
+                        ⚠️ 0% Rate (Guessing Risk)
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-emerald-950 text-emerald-300 border-emerald-800 text-[10px]">
+                        ✓ Calibrated Confidence
+                      </Badge>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 }

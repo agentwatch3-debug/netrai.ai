@@ -52,3 +52,23 @@ class LowConfidenceResponse(AgentWatchError):
         self.threshold = threshold
 
 
+class ClarificationRequired(AgentWatchError):
+    """Raised when downstream tool execution is intercepted because intent confidence is below threshold."""
+
+    def __init__(
+        self,
+        message: str = "Intent confidence is below threshold; clarification required before executing tool.",
+        *,
+        confidence: float | None = None,
+        threshold: float = 0.7,
+        tool: str | None = None,
+        action_taken: str = "clarification_requested",
+    ) -> None:
+        super().__init__(message)
+        self.confidence = confidence
+        self.threshold = threshold
+        self.tool = tool
+        self.action_taken = action_taken
+
+
+
