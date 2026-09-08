@@ -93,16 +93,39 @@ def process_entries(redis: Redis, entries: list[tuple[str, dict[str, str]]]) -> 
         persist_mappings(spans_and_mappings)
         clickhouse.insert("spans", [span_row(span) for span, _ in spans_and_mappings], column_names=FIELDS)
 
-        # Trigger automated evaluation checks
+        # Trigger automated evaluation checks (standard configs + RAG faithfulness scoring)
         try:
             engine = get_eval_engine()
             all_scores: list[dict[str, Any]] = []
+
+            # Group spans by trace_id to correlate tool retrieval context with downstream LLM calls
+            trace_spans_map: dict[str, list[dict[str, Any]]] = {}
             for span, _ in spans_and_mappings:
+                t_id = span.get("trace_id", "")
+                if t_id:
+                    trace_spans_map.setdefault(t_id, []).append(span)
+
+            for span, _ in spans_and_mappings:
+                # 1. Configured rule evaluations
                 configs = engine.fetch_active_configs(span["org_id"], span.get("agent_id"))
                 for cfg in configs:
                     score = engine.evaluate_span(span, cfg)
                     if score:
                         all_scores.append(score)
+
+                # 2. Automated Faithfulness evaluation on llm_call with preceding tool context
+                if span.get("span_type") == "llm_call":
+                    t_id = span.get("trace_id", "")
+                    trace_spans = trace_spans_map.get(t_id, [])
+                    tool_spans = [
+                        s for s in trace_spans
+                        if s.get("span_type") == "tool_call" and s.get("span_id") != span.get("span_id")
+                    ]
+                    if tool_spans:
+                        faithfulness_score = engine.evaluate_faithfulness(span, tool_spans)
+                        if faithfulness_score:
+                            all_scores.append(faithfulness_score)
+
             if all_scores:
                 engine.persist_scores(all_scores)
         except Exception as eval_exc:
