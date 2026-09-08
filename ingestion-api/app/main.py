@@ -21,6 +21,7 @@ from app.dependencies import (
 )
 from app.routers.agents import router as agents_router
 from app.routers.alerts import router as alerts_router
+from app.routers.analytics import router as analytics_router
 from app.routers.billing import router as billing_router
 from app.routers.circuit_breaker import router as circuit_breaker_router
 from app.routers.consents import router as consents_router
@@ -82,6 +83,7 @@ app.include_router(agents_router)
 app.include_router(datasets_router)
 app.include_router(quotas_router)
 app.include_router(organizations_router)
+app.include_router(analytics_router)
 
 __all__ = [
     "app",

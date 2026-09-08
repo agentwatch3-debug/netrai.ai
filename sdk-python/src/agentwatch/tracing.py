@@ -807,13 +807,29 @@ def trace_agent(name: str, *, agent_id: str | None = None, parent_agent_id: str 
 class SessionScope:
     """Context manager to group multi-turn agent turns and traces under a session, user, and end_user."""
 
-    def __init__(self, session_id: str, user_id: str | None = None, end_user_id: str | None = None) -> None:
+    def __init__(
+        self,
+        session_id: str,
+        user_id: str | None = None,
+        end_user_id: str | None = None,
+        outcome: bool | None = None,
+        ticket_resolved: bool | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
         self.session_id = session_id
         self.user_id = user_id
         self.end_user_id = end_user_id
+        self.outcome = outcome if outcome is not None else ticket_resolved
+        self.metadata = metadata or {}
         self._session_token: contextvars.Token[str | None] | None = None
         self._user_token: contextvars.Token[str | None] | None = None
         self._end_user_token: contextvars.Token[str | None] | None = None
+
+    def set_outcome(self, success: bool, *, ticket_resolved: bool | None = None, metadata: dict[str, Any] | None = None) -> None:
+        """Mark whether this session achieved its successful business outcome (e.g. ticket_resolved)."""
+        self.outcome = success if ticket_resolved is None else ticket_resolved
+        if metadata:
+            self.metadata.update(metadata)
 
     def __enter__(self) -> "SessionScope":
         self._session_token = current_session_id.set(self.session_id)
@@ -824,6 +840,29 @@ class SessionScope:
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+        if self.outcome is not None:
+            outcome_meta = dict(self.metadata)
+            outcome_meta.update({
+                "outcome_success": bool(self.outcome),
+                "ticket_resolved": bool(self.outcome),
+                "goal_achieved": bool(self.outcome),
+            })
+            exporter.enqueue({
+                "trace_id": current_trace_id.get() or uuid4().hex,
+                "span_id": secrets.token_hex(8),
+                "agent_id": current_agent_id.get() or get_config().org_id,
+                "org_id": get_config().org_id,
+                "session_id": self.session_id,
+                "user_id": self.user_id or current_user_id.get(),
+                "end_user_id": self.end_user_id or current_end_user_id.get(),
+                "name": "session.outcome",
+                "span_type": "session_outcome",
+                "status": "success" if self.outcome else "error",
+                "metadata": outcome_meta,
+                "started_at": datetime.now(UTC).isoformat(),
+                "ended_at": datetime.now(UTC).isoformat(),
+            })
+
         if self._session_token is not None:
             current_session_id.reset(self._session_token)
         if self._user_token is not None:
@@ -833,9 +872,57 @@ class SessionScope:
         return False
 
 
-def trace_session(session_id: str, user_id: str | None = None, end_user_id: str | None = None) -> SessionScope:
+def trace_session(
+    session_id: str,
+    user_id: str | None = None,
+    end_user_id: str | None = None,
+    outcome: bool | None = None,
+    ticket_resolved: bool | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> SessionScope:
     """Group all child agent, tool, and LLM calls under a multi-turn conversation session."""
-    return SessionScope(session_id=session_id, user_id=user_id, end_user_id=end_user_id)
+    return SessionScope(
+        session_id=session_id,
+        user_id=user_id,
+        end_user_id=end_user_id,
+        outcome=outcome,
+        ticket_resolved=ticket_resolved,
+        metadata=metadata,
+    )
+
+
+def set_session_outcome(
+    success: bool,
+    *,
+    session_id: str | None = None,
+    ticket_resolved: bool | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> None:
+    """Explicitly record a business outcome flag (e.g. ticket_resolved: True) for the active or given session."""
+    active_session = session_id or current_session_id.get()
+    outcome_val = success if ticket_resolved is None else ticket_resolved
+    outcome_meta = dict(metadata or {})
+    outcome_meta.update({
+        "outcome_success": bool(outcome_val),
+        "ticket_resolved": bool(outcome_val),
+        "goal_achieved": bool(outcome_val),
+    })
+    exporter.enqueue({
+        "trace_id": current_trace_id.get() or uuid4().hex,
+        "span_id": secrets.token_hex(8),
+        "agent_id": current_agent_id.get() or get_config().org_id,
+        "org_id": get_config().org_id,
+        "session_id": active_session,
+        "user_id": current_user_id.get(),
+        "end_user_id": current_end_user_id.get(),
+        "name": "session.outcome",
+        "span_type": "session_outcome",
+        "status": "success" if outcome_val else "error",
+        "metadata": outcome_meta,
+        "started_at": datetime.now(UTC).isoformat(),
+        "ended_at": datetime.now(UTC).isoformat(),
+    })
+
 
 
 class ConsentScope:

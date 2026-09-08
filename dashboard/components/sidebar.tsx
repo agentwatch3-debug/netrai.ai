@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Building2, CheckCircle2, CreditCard, Database, FileCode2, FileSpreadsheet, FileText, KeyRound, Lock, MessagesSquare, Network, Radio, Scale, Share2, ShieldAlert, ShieldCheck, SlidersHorizontal, User, Users, UserX, ZapOff } from "lucide-react";
+import { BarChart3, Building2, CheckCircle2, Coins, CreditCard, Database, FileCode2, FileSpreadsheet, FileText, KeyRound, Lock, MessagesSquare, Network, Radio, Scale, Share2, ShieldAlert, ShieldCheck, SlidersHorizontal, User, Users, UserX, ZapOff } from "lucide-react";
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
+  { href: "/analytics/cost-breakdown", label: "Cost Breakdown", icon: Coins },
   { href: "/traces", label: "Traces", icon: Network },
   { href: "/agents/graph", label: "Agent Topology", icon: Share2 },
   { href: "/sessions", label: "Sessions", icon: MessagesSquare },
@@ -26,6 +27,7 @@ const links = [
   { href: "/settings/billing", label: "Billing", icon: CreditCard },
   { href: "/admin", label: "Admin Console", icon: SlidersHorizontal },
 ];
+
 
 export function Sidebar() {
   const pathname = usePathname();

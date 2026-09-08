@@ -25,6 +25,7 @@ from .quotas import check_quota
 from .tracing import (
     compute_output_consistency,
     set_consent_context,
+    set_session_outcome,
     trace_agent,
     trace_llm,
     trace_session,
@@ -55,6 +56,7 @@ __all__ = [
     "scan_output_policy",
     "score",
     "set_consent_context",
+    "set_session_outcome",
     "trace_agent",
     "trace_llm",
     "trace_session",
@@ -62,4 +64,5 @@ __all__ = [
     "unpatch_anthropic",
     "unpatch_openai",
 ]
+
 
