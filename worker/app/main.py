@@ -113,7 +113,7 @@ def process_entries(redis: Redis, entries: list[tuple[str, dict[str, str]]]) -> 
                     if score:
                         all_scores.append(score)
 
-                # 2. Automated Faithfulness evaluation on llm_call with preceding tool context
+                # 2. Automated Faithfulness (RAG/tool-assisted) or Factuality (closed-book) evaluation on llm_call
                 if span.get("span_type") == "llm_call":
                     t_id = span.get("trace_id", "")
                     trace_spans = trace_spans_map.get(t_id, [])
@@ -125,6 +125,10 @@ def process_entries(redis: Redis, entries: list[tuple[str, dict[str, str]]]) -> 
                         faithfulness_score = engine.evaluate_faithfulness(span, tool_spans)
                         if faithfulness_score:
                             all_scores.append(faithfulness_score)
+                    else:
+                        factuality_score = engine.evaluate_factuality(span)
+                        if factuality_score:
+                            all_scores.append(factuality_score)
 
             if all_scores:
                 engine.persist_scores(all_scores)

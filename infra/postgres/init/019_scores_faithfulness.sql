@@ -1,4 +1,4 @@
--- 019_scores_faithfulness.sql: Faithfulness Evaluation Scores, Versioned Judge Prompts & Evaluation Cost Tracking
+-- 019_scores_faithfulness.sql: Faithfulness & Factuality Evaluation Scores, Versioned Judge Prompts & Evaluation Cost Tracking
 
 CREATE TABLE IF NOT EXISTS scores
 (
@@ -6,9 +6,12 @@ CREATE TABLE IF NOT EXISTS scores
     org_id TEXT NOT NULL,
     span_id TEXT NOT NULL,
     trace_id TEXT NULL,
-    score_type VARCHAR(64) NOT NULL, -- e.g. 'faithfulness', 'hallucination', 'relevancy'
+    score_type VARCHAR(64) NOT NULL, -- e.g. 'factuality', 'faithfulness', 'hallucination', 'relevancy'
+    check_type VARCHAR(64) NOT NULL DEFAULT 'faithfulness', -- 'faithfulness' (grounded in retrieved context) vs 'factuality' (general knowledge / lower confidence)
     value DOUBLE PRECISION NOT NULL,  -- normalized between 0.0 and 1.0
     unsupported_claims JSONB DEFAULT '[]'::jsonb,
+    uncertain_claims JSONB DEFAULT '[]'::jsonb,
+    judge_confidence VARCHAR(32) NOT NULL DEFAULT 'high', -- 'high', 'medium', 'low', 'uncertain'
     reasoning TEXT NULL,
     judge_model TEXT NOT NULL,
     judge_prompt_version VARCHAR(32) NOT NULL,
@@ -20,6 +23,7 @@ CREATE TABLE IF NOT EXISTS scores
 );
 
 CREATE INDEX IF NOT EXISTS scores_org_type_idx ON scores (org_id, score_type);
+CREATE INDEX IF NOT EXISTS scores_check_type_idx ON scores (org_id, check_type);
 CREATE INDEX IF NOT EXISTS scores_span_idx ON scores (span_id);
 CREATE INDEX IF NOT EXISTS scores_trace_idx ON scores (trace_id);
 CREATE INDEX IF NOT EXISTS scores_judge_prompt_idx ON scores (judge_prompt_version);

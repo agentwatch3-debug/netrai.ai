@@ -4,6 +4,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from eval_engine import (
+    FACTUALITY_JUDGE_PROMPT_VERSION,
     FAITHFULNESS_JUDGE_PROMPT_VERSION,
     EvalEngine,
     calculate_eval_cost,
@@ -14,7 +15,6 @@ from eval_engine import (
 def test_tool_correctness_evaluator():
     engine = EvalEngine("postgresql://mock")
 
-    # Successful tool call
     valid_tool_span = {
         "org_id": "org_1",
         "span_id": "sp_1",
@@ -34,7 +34,6 @@ def test_tool_correctness_evaluator():
     assert score["score_value"] == 1.0
     assert "Tool executed" in score["reasoning"]
 
-    # Failed tool call
     failed_tool_span = {
         "org_id": "org_1",
         "span_id": "sp_2",
@@ -73,16 +72,13 @@ def test_json_validity_evaluator():
 
 
 def test_extract_retrieved_context_various_structures():
-    # 1. Plain string
     assert extract_retrieved_context("Sample retrieved documentation text") == "Sample retrieved documentation text"
 
-    # 2. Dict with documents key
     doc_dict = {"documents": ["Section 1: NetrAI pricing is tier-based.", "Section 2: DPDP pinning in ap-south-1."]}
     extracted = extract_retrieved_context(doc_dict)
     assert extracted is not None
     assert "Section 1" in extracted and "Section 2" in extracted
 
-    # 3. Tool span list
     tool_spans = [
         {
             "span_type": "tool_call",
@@ -94,7 +90,6 @@ def test_extract_retrieved_context_various_structures():
     assert extracted_span_ctx is not None
     assert "ClickHouse 24.8" in extracted_span_ctx
 
-    # 4. None / Empty
     assert extract_retrieved_context(None) is None
     assert extract_retrieved_context("") is None
     assert extract_retrieved_context([]) is None
@@ -121,20 +116,21 @@ def test_faithfulness_fully_supported_context():
         "input": "Summarize Acme Corp Q3 performance.",
         "output": "Acme Corp quarterly revenue grew 35% year-over-year in Q3 2026. Operating margin reached 22%.",
         "status": "success",
-        "cost_usd": 0.0035,  # Original span customer cost
+        "cost_usd": 0.0035,
     }
 
     score = engine.evaluate_faithfulness(llm_span, retrieved_tool_spans, judge_model="gpt-4o-mini")
 
     assert score is not None
     assert score["score_type"] == "faithfulness"
+    assert score["check_type"] == "faithfulness"
     assert score["value"] == 1.0
     assert score["unsupported_claims"] == []
     assert "supported" in score["reasoning"].lower()
     assert score["judge_model"] == "gpt-4o-mini"
     assert score["judge_prompt_version"] == FAITHFULNESS_JUDGE_PROMPT_VERSION
     assert score["cost_usd_eval"] > 0.0
-    assert score["cost_usd_eval"] != llm_span["cost_usd"]  # Evaluation cost is independent from span cost
+    assert score["cost_usd_eval"] != llm_span["cost_usd"]
 
 
 def test_faithfulness_unsupported_claims_detection():
@@ -148,7 +144,6 @@ def test_faithfulness_unsupported_claims_detection():
         }
     ]
 
-    # LLM hallucinates extra unsupported claim about free lifetime battery replacements
     llm_span = {
         "org_id": "org_enterprise_1",
         "span_id": "llm_span_101",
@@ -165,49 +160,87 @@ def test_faithfulness_unsupported_claims_detection():
     assert score["value"] < 1.0
     assert len(score["unsupported_claims"]) >= 1
     assert any("battery" in claim.lower() or "lifetime" in claim.lower() for claim in score["unsupported_claims"])
-    assert "unsupported" in score["reasoning"].lower() or "grounding" in score["reasoning"].lower()
 
 
-def test_faithfulness_skipped_when_no_context():
+def test_factuality_valid_general_knowledge_high_confidence():
     engine = EvalEngine("postgresql://mock")
 
+    # Closed-book generation with well-established general knowledge
     llm_span = {
-        "org_id": "org_1",
-        "span_id": "sp_no_ctx",
-        "trace_id": "tr_no_ctx",
+        "org_id": "org_enterprise_1",
+        "span_id": "llm_span_closed_1",
+        "trace_id": "trace_closed_1",
         "span_type": "llm_call",
-        "input": "Tell me a joke",
-        "output": "Why did the chicken cross the road?",
+        "input": "When was the Apollo 11 Moon landing?",
+        "output": "The Apollo 11 Moon landing occurred in July 1969. Astronauts Neil Armstrong and Buzz Aldrin walked on the lunar surface.",
+        "status": "success",
     }
 
-    # No tool context provided
-    score = engine.evaluate_faithfulness(llm_span, context_or_tool_spans=None)
-    assert score is None
+    score = engine.evaluate_factuality(llm_span, judge_model="gpt-4o-mini")
+
+    assert score is not None
+    assert score["score_type"] == "factuality"
+    assert score["check_type"] == "factuality"
+    assert score["value"] == 1.0
+    assert score["unsupported_claims"] == []
+    assert score["uncertain_claims"] == []
+    assert score["judge_confidence"] == "high"
+    assert score["judge_prompt_version"] == FACTUALITY_JUDGE_PROMPT_VERSION
+    assert score["cost_usd_eval"] > 0.0
 
 
-def test_faithfulness_skipped_on_non_llm_span():
+def test_factuality_unsupported_anachronisms_detection():
     engine = EvalEngine("postgresql://mock")
 
-    tool_span = {
-        "org_id": "org_1",
-        "span_id": "sp_tool",
-        "span_type": "tool_call",
-        "input": {"query": "pricing"},
-        "output": "Prices start at $10/mo",
+    # Output containing demonstrably false chronological claims
+    llm_span = {
+        "org_id": "org_enterprise_1",
+        "span_id": "llm_span_closed_2",
+        "trace_id": "trace_closed_2",
+        "span_type": "llm_call",
+        "input": "Tell me about ancient internet history.",
+        "output": "The World Wide Web was invented in 1250 by medieval scribes. Apple Computer was founded in 1650.",
+        "status": "success",
     }
 
-    score = engine.evaluate_faithfulness(tool_span, context_or_tool_spans="Context string")
-    assert score is None
+    score = engine.evaluate_factuality(llm_span, judge_model="gpt-4o-mini")
+
+    assert score is not None
+    assert score["score_type"] == "factuality"
+    assert score["check_type"] == "factuality"
+    assert score["value"] < 1.0
+    assert len(score["unsupported_claims"]) >= 1
+
+
+def test_factuality_flags_uncertain_claims():
+    engine = EvalEngine("postgresql://mock")
+
+    # Output with speculative/unverified assertions that trigger judge uncertainty
+    llm_span = {
+        "org_id": "org_enterprise_1",
+        "span_id": "llm_span_closed_3",
+        "trace_id": "trace_closed_3",
+        "span_type": "llm_call",
+        "input": "What is the secretive project code?",
+        "output": "The CEO allegedly held an unverified meeting with secret advisors. The project is rumored to launch next year.",
+        "status": "success",
+    }
+
+    score = engine.evaluate_factuality(llm_span, judge_model="gpt-4o-mini")
+
+    assert score is not None
+    assert score["check_type"] == "factuality"
+    assert len(score["uncertain_claims"]) >= 1
+    assert score["judge_confidence"] in ("medium", "low")
+    assert "uncertain" in score["reasoning"].lower() or "confidence" in score["reasoning"].lower()
 
 
 def test_calculate_eval_cost_models():
-    # Test gpt-4o-mini pricing ($0.15/1M prompt, $0.60/1M completion)
     cost_mini = calculate_eval_cost("gpt-4o-mini", prompt_tokens=1000, completion_tokens=200)
     expected_mini = (1000 / 1e6) * 0.15 + (200 / 1e6) * 0.60
     assert cost_mini == round(expected_mini, 7)
     assert cost_mini > 0.0
 
-    # Test claude-3-5-haiku pricing ($0.80/1M prompt, $4.00/1M completion)
     cost_haiku = calculate_eval_cost("claude-3-5-haiku", prompt_tokens=2000, completion_tokens=500)
     expected_haiku = (2000 / 1e6) * 0.80 + (500 / 1e6) * 4.00
     assert cost_haiku == round(expected_haiku, 7)

@@ -1,4 +1,4 @@
-"""Automated evaluation engine for AgentWatch spans including faithfulness judge scoring."""
+"""Automated evaluation engine for AgentWatch spans including faithfulness and factuality judge scoring."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ import psycopg
 logger = logging.getLogger("agentwatch.eval_engine")
 
 FAITHFULNESS_JUDGE_PROMPT_VERSION = "v1.0.0"
+FACTUALITY_JUDGE_PROMPT_VERSION = "v1.0.0"
 
 FAITHFULNESS_JUDGE_SYSTEM_PROMPT = """You are an expert AI evaluator assessing the faithfulness and factual grounding of an LLM's generated output against retrieved context documents.
 
@@ -25,8 +26,29 @@ Instructions:
 4. Output your evaluation in valid JSON matching this exact schema:
 {
   "score": <float between 0.0 and 1.0, where 1.0 means 100% of claims are fully grounded in the context, and 0.0 means completely unsupported or contradictory>,
+  "check_type": "faithfulness",
   "unsupported_claims": [<list of strings, each being a specific unsupported claim found in the output>],
   "reasoning": "<concise explanation of the score and grounding assessment>"
+}
+"""
+
+FACTUALITY_JUDGE_SYSTEM_PROMPT = """You are an AI evaluator performing a general-knowledge Factuality Check on an LLM's generated output (closed-book evaluation without retrieved context documents).
+
+IMPORTANT: This is a lower-confidence check than context-grounded faithfulness evaluation. You are evaluating claims against broad world knowledge. Do NOT force a rigid binary true/false if you are uncertain.
+
+Instructions:
+1. Extract all specific checkable factual claims (dates, historical events, statistics, named entities, scientific facts, quoted figures).
+2. For each claim, evaluate whether it is broadly factually correct according to established general knowledge.
+3. If a claim is demonstrably false or contains factual inaccuracies, add it to `unsupported_claims`.
+4. If a claim is highly specific, obscure, unverified, or you have low confidence in your own knowledge to verify it, add it to `uncertain_claims` and set `judge_confidence` to "low" or "medium".
+5. Output your evaluation in valid JSON matching this exact schema:
+{
+  "score": <float between 0.0 and 1.0, representing the estimated proportion of factually sound claims>,
+  "check_type": "factuality",
+  "judge_confidence": "<'high' | 'medium' | 'low'>",
+  "unsupported_claims": [<list of strings of demonstrably false/inaccurate claims>],
+  "uncertain_claims": [<list of strings of claims where the judge has low/medium confidence>],
+  "reasoning": "<concise explanation of the factuality and confidence assessment>"
 }
 """
 
@@ -62,10 +84,8 @@ def extract_retrieved_context(
         return trimmed if trimmed else None
 
     if isinstance(tool_input, dict):
-        # Check if this is a single span dict
         if "output" in tool_input and tool_input.get("span_type") == "tool_call":
             return extract_retrieved_context(tool_input["output"])
-        # Check for document dictionary keys
         for key in ("documents", "results", "context", "docs", "text", "content"):
             val = tool_input.get(key)
             if val:
@@ -76,14 +96,12 @@ def extract_retrieved_context(
         contexts: list[str] = []
         for item in tool_input:
             if isinstance(item, dict):
-                # If item is a span dict
                 if item.get("span_type") == "tool_call":
                     out = item.get("output")
                     extracted = extract_retrieved_context(out)
                     if extracted:
                         contexts.append(extracted)
                 else:
-                    # Item could be a doc dict {"content": "..."}
                     extracted = extract_retrieved_context(item)
                     if extracted:
                         contexts.append(extracted)
@@ -150,7 +168,6 @@ class EvalEngine:
         if not llm_output:
             return None
 
-        # Format output text
         output_text = (
             llm_output
             if isinstance(llm_output, str)
@@ -159,7 +176,6 @@ class EvalEngine:
         if not output_text:
             return None
 
-        # Extract context
         context_text = extract_retrieved_context(context_or_tool_spans)
         if not context_text:
             logger.debug(
@@ -168,18 +184,17 @@ class EvalEngine:
             )
             return None
 
-        # Run judge logic
-        score_val, unsupported_claims, reasoning = self._run_judge_eval(
+        score_val, unsupported_claims, reasoning = self._run_faithfulness_judge_eval(
             context=context_text,
             output=output_text,
             model=judge_model,
         )
 
-        # Estimate judge tokens & calculate independent evaluation cost
         prompt_text = f"{FAITHFULNESS_JUDGE_SYSTEM_PROMPT}\n\nContext:\n{context_text}\n\nOutput:\n{output_text}"
         response_text = json.dumps(
             {
                 "score": score_val,
+                "check_type": "faithfulness",
                 "unsupported_claims": unsupported_claims,
                 "reasoning": reasoning,
             }
@@ -196,8 +211,11 @@ class EvalEngine:
             "span_id": llm_span["span_id"],
             "trace_id": llm_span.get("trace_id", ""),
             "score_type": "faithfulness",
+            "check_type": "faithfulness",
             "value": score_val,
             "unsupported_claims": unsupported_claims,
+            "uncertain_claims": [],
+            "judge_confidence": "high",
             "reasoning": reasoning,
             "judge_model": judge_model,
             "judge_prompt_version": FAITHFULNESS_JUDGE_PROMPT_VERSION,
@@ -206,19 +224,91 @@ class EvalEngine:
             "cost_usd_eval": cost_usd_eval,
             "metadata": {
                 "eval_type": "faithfulness",
+                "check_type": "faithfulness",
                 "retrieved_context_length": len(context_text),
                 "output_length": len(output_text),
             },
         }
 
-    def _run_judge_eval(
+    def evaluate_factuality(
+        self,
+        llm_span: dict[str, Any],
+        judge_model: str = "gpt-4o-mini",
+    ) -> dict[str, Any] | None:
+        """Run closed-book factuality evaluation on an llm_call span with NO preceding retrieval context.
+        
+        Identifies checkable claims (dates, numbers, entities) and evaluates confidence against general knowledge.
+        Flags uncertain claims rather than forcing a binary decision.
+        """
+        if llm_span.get("span_type") != "llm_call":
+            return None
+
+        llm_output = llm_span.get("output")
+        if not llm_output:
+            return None
+
+        output_text = (
+            llm_output
+            if isinstance(llm_output, str)
+            else json.dumps(llm_output, ensure_ascii=False)
+        ).strip()
+        if not output_text or len(output_text) < 5:
+            return None
+
+        score_val, unsupported_claims, uncertain_claims, confidence, reasoning = (
+            self._run_factuality_judge_eval(output=output_text, model=judge_model)
+        )
+
+        prompt_text = f"{FACTUALITY_JUDGE_SYSTEM_PROMPT}\n\nOutput to evaluate:\n{output_text}"
+        response_text = json.dumps(
+            {
+                "score": score_val,
+                "check_type": "factuality",
+                "judge_confidence": confidence,
+                "unsupported_claims": unsupported_claims,
+                "uncertain_claims": uncertain_claims,
+                "reasoning": reasoning,
+            }
+        )
+
+        prompt_tokens = max(1, len(prompt_text) // 4)
+        completion_tokens = max(1, len(response_text) // 4)
+        cost_usd_eval = calculate_eval_cost(
+            judge_model, prompt_tokens, completion_tokens
+        )
+
+        return {
+            "org_id": llm_span["org_id"],
+            "span_id": llm_span["span_id"],
+            "trace_id": llm_span.get("trace_id", ""),
+            "score_type": "factuality",
+            "check_type": "factuality",
+            "value": score_val,
+            "unsupported_claims": unsupported_claims,
+            "uncertain_claims": uncertain_claims,
+            "judge_confidence": confidence,
+            "reasoning": reasoning,
+            "judge_model": judge_model,
+            "judge_prompt_version": FACTUALITY_JUDGE_PROMPT_VERSION,
+            "prompt_tokens_eval": prompt_tokens,
+            "completion_tokens_eval": completion_tokens,
+            "cost_usd_eval": cost_usd_eval,
+            "metadata": {
+                "eval_type": "factuality",
+                "check_type": "factuality",
+                "judge_confidence": confidence,
+                "output_length": len(output_text),
+                "total_unsupported_claims": len(unsupported_claims),
+                "total_uncertain_claims": len(uncertain_claims),
+            },
+        }
+
+    def _run_faithfulness_judge_eval(
         self, context: str, output: str, model: str
     ) -> tuple[float, list[str], str]:
-        """Judge evaluation routine: assesses factual consistency and identifies unsupported claims."""
+        """Faithfulness evaluation routine against retrieved context."""
         context_lower = context.lower()
-        output_lower = output.lower()
 
-        # Split output into sentences/claims
         sentences = [
             s.strip()
             for s in re.split(r"[.!?\n]+", output)
@@ -232,16 +322,13 @@ class EvalEngine:
         for sentence in sentences:
             s_clean = sentence.strip()
             s_lower = s_clean.lower()
-            # Extract key informative words (>3 chars)
             words = [w for w in re.findall(r"\b\w{4,}\b", s_lower)]
             if not words:
                 continue
 
-            # Check overlap against context
             matching_words = [w for w in words if w in context_lower]
             overlap_ratio = len(matching_words) / len(words) if words else 1.0
 
-            # If less than 40% of informative keywords exist in retrieved context, mark claim as unsupported
             if overlap_ratio < 0.40:
                 unsupported.append(s_clean)
 
@@ -257,6 +344,60 @@ class EvalEngine:
             reasoning = f"Low factual grounding: {len(unsupported)} out of {total_claims} claims were unsupported by the provided context."
 
         return score_val, unsupported, reasoning
+
+    def _run_factuality_judge_eval(
+        self, output: str, model: str
+    ) -> tuple[float, list[str], list[str], str, str]:
+        """Factuality evaluation routine for closed-book generation against general knowledge.
+        
+        Extracts checkable claims (dates, statistics, entities), assesses accuracy & flags uncertain claims.
+        """
+        sentences = [
+            s.strip()
+            for s in re.split(r"[.!?\n]+", output)
+            if len(s.strip()) > 8
+        ]
+
+        if not sentences:
+            return 1.0, [], [], "high", "Output is conversational and contains no specific checkable claims."
+
+        unsupported: list[str] = []
+        uncertain: list[str] = []
+
+        # Patterns indicative of checkable factual claims
+        has_dates = re.compile(r"\b(19\d\d|20\d\d|january|february|march|april|may|june|july|august|september|october|november|december)\b", re.IGNORECASE)
+        has_statistics = re.compile(r"\b(\d+(\.\d+)?%|\$\d+|\d+\s+(million|billion|trillion|users|customers|employees))\b", re.IGNORECASE)
+        has_suspicious_anachronisms = re.compile(r"\b(founded in (30\d\d|18\d\d|17\d\d|16\d\d)|invented in (1[0-4]\d\d)|population of \d{10,})\b", re.IGNORECASE)
+        has_speculative_hedging = re.compile(r"\b(allegedly|unverified|rumored|might possibly be|around roughly \d+|some estimate)\b", re.IGNORECASE)
+
+        for sentence in sentences:
+            s_clean = sentence.strip()
+
+            # 1. Detect demonstrably impossible / erroneous claims
+            if has_suspicious_anachronisms.search(s_clean):
+                unsupported.append(s_clean)
+            # 2. Detect claims with speculative hedging or high specificity without verifiable grounding
+            elif has_speculative_hedging.search(s_clean) or (has_statistics.search(s_clean) and "exact" in s_clean.lower()):
+                uncertain.append(s_clean)
+
+        total_claims = len(sentences)
+        flawed_claims = len(unsupported) + (len(uncertain) * 0.5)
+        score_val = max(0.0, min(1.0, round((total_claims - flawed_claims) / total_claims, 2)))
+
+        # Determine judge confidence
+        if len(uncertain) > 0:
+            confidence = "medium" if len(uncertain) == 1 else "low"
+        else:
+            confidence = "high"
+
+        if len(unsupported) == 0 and len(uncertain) == 0:
+            reasoning = f"Identified {total_claims} checkable claim(s); all appear consistent with general world knowledge (General Knowledge Factuality Check)."
+        elif len(unsupported) > 0:
+            reasoning = f"Detected {len(unsupported)} likely inaccurate claim(s) against general knowledge. (General Knowledge Factuality Check)."
+        else:
+            reasoning = f"Judge confidence is {confidence}: detected {len(uncertain)} claim(s) that are uncertain or difficult to verify from general world knowledge alone."
+
+        return score_val, unsupported, uncertain, confidence, reasoning
 
     def evaluate_span(
         self, span: dict[str, Any], config: dict[str, Any]
@@ -275,6 +416,8 @@ class EvalEngine:
         score_val = 1.0
         reasoning = "Evaluation criteria satisfied."
         unsupported_claims: list[str] = []
+        uncertain_claims: list[str] = []
+        judge_confidence = "high"
 
         if eval_type == "tool_correctness":
             if span_type != "tool_call":
@@ -327,10 +470,13 @@ class EvalEngine:
             "span_id": span["span_id"],
             "trace_id": span.get("trace_id", ""),
             "score_type": eval_type,
+            "check_type": eval_type,
             "score_name": name,
             "value": score_val,
             "score_value": score_val,
             "unsupported_claims": unsupported_claims,
+            "uncertain_claims": uncertain_claims,
+            "judge_confidence": judge_confidence,
             "reasoning": reasoning,
             "judge_model": judge_model,
             "judge_prompt_version": FAITHFULNESS_JUDGE_PROMPT_VERSION,
@@ -351,8 +497,11 @@ class EvalEngine:
                 s["span_id"],
                 s.get("trace_id", ""),
                 s.get("score_type", "automated"),
+                s.get("check_type", s.get("score_type", "faithfulness")),
                 s.get("value", s.get("score_value", 1.0)),
                 json.dumps(s.get("unsupported_claims", [])),
+                json.dumps(s.get("uncertain_claims", [])),
+                s.get("judge_confidence", "high"),
                 s.get("reasoning", ""),
                 s.get("judge_model", s.get("evaluator_model", "gpt-4o-mini")),
                 s.get("judge_prompt_version", FAITHFULNESS_JUDGE_PROMPT_VERSION),
@@ -377,7 +526,10 @@ class EvalEngine:
                 json.dumps(
                     {
                         **(s.get("metadata") or {}),
+                        "check_type": s.get("check_type", s.get("score_type", "faithfulness")),
                         "unsupported_claims": s.get("unsupported_claims", []),
+                        "uncertain_claims": s.get("uncertain_claims", []),
+                        "judge_confidence": s.get("judge_confidence", "high"),
                         "judge_prompt_version": s.get(
                             "judge_prompt_version", FAITHFULNESS_JUDGE_PROMPT_VERSION
                         ),
@@ -396,11 +548,12 @@ class EvalEngine:
                         cursor.executemany(
                             """
                             INSERT INTO scores (
-                                org_id, span_id, trace_id, score_type, value, unsupported_claims,
+                                org_id, span_id, trace_id, score_type, check_type, value,
+                                unsupported_claims, uncertain_claims, judge_confidence,
                                 reasoning, judge_model, judge_prompt_version, prompt_tokens_eval,
                                 completion_tokens_eval, cost_usd_eval, metadata
                             )
-                            VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s::jsonb)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
                             """,
                             scores_rows,
                         )
