@@ -16,6 +16,7 @@ logger = logging.getLogger("agentwatch.eval_engine")
 
 FAITHFULNESS_JUDGE_PROMPT_VERSION = "v1.0.0"
 FACTUALITY_JUDGE_PROMPT_VERSION = "v1.0.0"
+TASK_ADHERENCE_JUDGE_PROMPT_VERSION = "v1.0.0"
 
 FAITHFULNESS_JUDGE_SYSTEM_PROMPT = """You are an expert AI evaluator assessing the faithfulness and factual grounding of an LLM's generated output against retrieved context documents.
 
@@ -51,6 +52,21 @@ Instructions:
   "reasoning": "<concise explanation of the factuality and confidence assessment>"
 }
 """
+
+TASK_ADHERENCE_JUDGE_SYSTEM_PROMPT = """You are a fast, lightweight AI evaluator assessing Task Adherence (Intent-to-Action alignment).
+
+Instructions:
+1. Compare the User's Original Request against the Agent's Chosen Action (the tool invoked + arguments, or the response generated).
+2. Assess whether this action plausibly and directly addresses what the user requested, or if there is an intent mismatch / hallucinated irrelevant action.
+3. Output your evaluation in valid JSON matching this exact schema:
+{
+  "score": <float between 0.0 and 1.0, where 1.0 means the action directly addresses user intent, and 0.0 means completely irrelevant or counter-productive>,
+  "check_type": "task_adherence",
+  "adherence_level": "<'aligned' | 'partial' | 'mismatch'>",
+  "reasoning": "<short, concise explanation of intent-to-action alignment>"
+}
+"""
+
 
 JUDGE_MODEL_PRICING: dict[str, dict[str, float]] = {
     "gpt-4o-mini": {"prompt": 0.15, "completion": 0.60},
@@ -303,7 +319,119 @@ class EvalEngine:
             },
         }
 
+    def evaluate_task_adherence(
+        self,
+        user_input: Any,
+        agent_action: Any,
+        llm_span: dict[str, Any],
+        judge_model: str = "gpt-4o-mini",
+    ) -> dict[str, Any] | None:
+        """Run a fast, lightweight judge call comparing user request against chosen agent action."""
+        u_text = str(user_input or "").strip()
+        if not u_text:
+            inp = llm_span.get("input")
+            if isinstance(inp, dict):
+                u_text = str(inp.get("prompt") or inp.get("user_message") or inp.get("args") or inp.get("messages") or "")
+            elif isinstance(inp, str):
+                u_text = inp
+
+        act_data = agent_action if agent_action is not None else llm_span.get("output")
+        score_val, adherence_level, reasoning = self._run_task_adherence_judge_eval(
+            user_input=u_text, agent_action=act_data, model=judge_model
+        )
+
+        prompt_text = f"{TASK_ADHERENCE_JUDGE_SYSTEM_PROMPT}\n\nUser Request:\n{u_text}\n\nAgent Action:\n{act_data}"
+        response_text = json.dumps({
+            "score": score_val,
+            "check_type": "task_adherence",
+            "adherence_level": adherence_level,
+            "reasoning": reasoning,
+        })
+        prompt_tokens = max(1, len(prompt_text) // 4)
+        completion_tokens = max(1, len(response_text) // 4)
+        cost_usd_eval = calculate_eval_cost(judge_model, prompt_tokens, completion_tokens)
+
+        return {
+            "org_id": llm_span["org_id"],
+            "span_id": llm_span["span_id"],
+            "trace_id": llm_span.get("trace_id", ""),
+            "score_type": "task_adherence",
+            "check_type": "task_adherence",
+            "value": score_val,
+            "unsupported_claims": [],
+            "uncertain_claims": [],
+            "judge_confidence": "high",
+            "reasoning": reasoning,
+            "judge_model": judge_model,
+            "judge_prompt_version": TASK_ADHERENCE_JUDGE_PROMPT_VERSION,
+            "prompt_tokens_eval": prompt_tokens,
+            "completion_tokens_eval": completion_tokens,
+            "cost_usd_eval": cost_usd_eval,
+            "metadata": {
+                "eval_type": "task_adherence",
+                "check_type": "task_adherence",
+                "adherence_level": adherence_level,
+                "user_input_preview": u_text[:150],
+                "action_preview": str(act_data)[:150],
+            },
+        }
+
+    def _run_task_adherence_judge_eval(
+        self, user_input: str, agent_action: Any, model: str
+    ) -> tuple[float, str, str]:
+        """Fast intent-to-action task adherence scoring."""
+        user_lower = str(user_input).lower().strip()
+        action_str = (
+            json.dumps(agent_action, ensure_ascii=False)
+            if isinstance(agent_action, (dict, list))
+            else str(agent_action)
+        ).lower().strip()
+
+        if not user_lower:
+            return 1.0, "aligned", "No specific user prompt provided to compare."
+
+        user_words = set(re.findall(r"\b\w{3,}\b", user_lower))
+        stopwords = {"the", "and", "for", "can", "you", "please", "with", "this", "that", "how", "what", "where", "why", "are"}
+        meaningful_user_words = user_words - stopwords
+
+        if not meaningful_user_words:
+            return 1.0, "aligned", "User request is conversational greeting or acknowledgement."
+
+        overlap = [w for w in meaningful_user_words if w in action_str]
+        overlap_ratio = len(overlap) / len(meaningful_user_words)
+
+        action_is_mismatch = False
+        if any(w in user_lower for w in ["cancel", "refund", "terminate", "delete", "stop"]):
+            if any(w in action_str for w in ["subscribe", "renew", "upgrade", "charge", "order_create"]):
+                action_is_mismatch = True
+        elif any(w in user_lower for w in ["weather", "temperature", "forecast"]):
+            if any(w in action_str for w in ["stock_quote", "crypto_price", "database_drop"]):
+                action_is_mismatch = True
+        elif any(w in user_lower for w in ["sql", "query", "database", "table"]):
+            if any(w in action_str for w in ["send_marketing_email", "charge_credit_card"]):
+                action_is_mismatch = True
+
+        if action_is_mismatch:
+            score_val = 0.15
+            adherence_level = "mismatch"
+            reasoning = f"Possible intent mismatch: User requested action on '{list(meaningful_user_words)[:3]}' but agent executed unrelated/conflicting action."
+        elif overlap_ratio >= 0.50:
+            score_val = 1.0
+            adherence_level = "aligned"
+            reasoning = f"Agent action directly addresses user request (matched key terms: {overlap[:3]})."
+        elif overlap_ratio >= 0.20 or len(overlap) >= 1:
+            score_val = 0.75
+            adherence_level = "partial"
+            reasoning = f"Agent action partially aligns with user request (partial overlap on {overlap})."
+        else:
+            score_val = 0.35
+            adherence_level = "mismatch"
+            reasoning = f"Low task adherence: Agent action lacks semantic alignment with user prompt ('{list(meaningful_user_words)[:3]}')."
+
+        return score_val, adherence_level, reasoning
+
     def _run_faithfulness_judge_eval(
+
         self, context: str, output: str, model: str
     ) -> tuple[float, list[str], str]:
         """Faithfulness evaluation routine against retrieved context."""
@@ -448,8 +576,17 @@ class EvalEngine:
                 score_val = 0.8
                 reasoning = "Output format is non-JSON primitive."
 
+        elif eval_type == "task_adherence":
+            u_inp = span.get("input")
+            act_out = span.get("output")
+            score_val, adherence_level, reasoning = self._run_task_adherence_judge_eval(
+                user_input=u_inp, agent_action=act_out, model=config.get("model", "gpt-4o-mini")
+            )
+            judge_confidence = "high"
+
         elif eval_type in ("hallucination", "relevancy", "llm_judge"):
             if span_type not in ("llm_call", "agent_call"):
+
                 return None
             text_out = str(output_data or "")
             if status == "error":

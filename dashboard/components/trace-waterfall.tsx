@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Lock, Sparkles, ThumbsDown, ThumbsUp, Unlock, Wrench } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Lock, Sparkles, Target, ThumbsDown, ThumbsUp, Unlock, Wrench } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EvalScore, Span } from "@/lib/types";
@@ -95,21 +95,75 @@ export function TraceWaterfall({ traceId }: { traceId: string }) {
 
               {/* Eval Badges */}
               <div className="flex items-center gap-1.5 ml-2">
-                {spanScores.map((s) => (
-                  <span
-                    key={s.id || s.score_name}
-                    className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-                      s.score_value >= 0.8
-                        ? "bg-emerald-950 text-emerald-300 border border-emerald-900/50"
-                        : "bg-amber-950 text-amber-300 border border-amber-900/50"
-                    }`}
-                    title={s.reasoning || undefined}
-                  >
-                    <Sparkles size={10} />
-                    {s.score_name}: {(s.score_value * 100).toFixed(0)}%
-                  </span>
-                ))}
+                {spanScores.map((s) => {
+                  const sName = (s.score_name || "").toLowerCase();
+                  if (sName === "task_adherence") {
+                    if (s.score_value < 0.7) {
+                      return (
+                        <span
+                          key={s.id || s.score_name}
+                          className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-semibold bg-red-950 text-red-300 border border-red-800 shadow-sm"
+                          title={s.reasoning || "Possible intent mismatch between user request and agent action"}
+                        >
+                          <AlertTriangle size={11} className="text-red-400" />
+                          Possible intent mismatch ({(s.score_value * 100).toFixed(0)}%)
+                        </span>
+                      );
+                    }
+                    return (
+                      <span
+                        key={s.id || s.score_name}
+                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-blue-950 text-blue-300 border border-blue-900/50"
+                        title={s.reasoning || "Action aligns with user intent"}
+                      >
+                        <Target size={10} className="text-blue-400" />
+                        Task Adherence: {(s.score_value * 100).toFixed(0)}%
+                      </span>
+                    );
+                  }
+
+                  if (sName === "faithfulness" || sName === "hallucination") {
+                    if (s.score_value < 0.7) {
+                      return (
+                        <span
+                          key={s.id || s.score_name}
+                          className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-semibold bg-amber-950 text-amber-300 border border-amber-800 shadow-sm"
+                          title={s.reasoning || "Hallucinated or ungrounded claims detected"}
+                        >
+                          <AlertTriangle size={11} className="text-amber-400" />
+                          Ungrounded / Hallucination ({(s.score_value * 100).toFixed(0)}%)
+                        </span>
+                      );
+                    }
+                    return (
+                      <span
+                        key={s.id || s.score_name}
+                        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-900/50"
+                        title={s.reasoning || undefined}
+                      >
+                        <Sparkles size={10} />
+                        Faithfulness: {(s.score_value * 100).toFixed(0)}%
+                      </span>
+                    );
+                  }
+
+                  return (
+                    <span
+                      key={s.id || s.score_name}
+                      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                        s.score_value >= 0.7
+                          ? "bg-emerald-950 text-emerald-300 border border-emerald-900/50"
+                          : "bg-amber-950 text-amber-300 border border-amber-900/50"
+                      }`}
+                      title={s.reasoning || undefined}
+                    >
+                      <Sparkles size={10} />
+                      {s.score_name}: {(s.score_value * 100).toFixed(0)}%
+                    </span>
+                  );
+                })}
               </div>
+
 
               <div className="ml-auto flex items-center gap-3 text-xs text-slate-400 font-mono">
                 <span>{span.latency_ms ?? 0} ms</span>

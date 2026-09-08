@@ -46,10 +46,12 @@ from app.startup_checks import run_startup_checks
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     run_startup_checks()
+    auth_disabled = os.getenv("AUTH_DISABLED", "false").lower() == "true"
+    span_backend = os.getenv("SPAN_BACKEND", SPAN_BACKEND).lower()
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-    if SPAN_BACKEND == "redis" or not AUTH_DISABLED:
+    if span_backend == "redis" or not auth_disabled:
         state.redis = Redis.from_url(redis_url, decode_responses=True)
-    if not AUTH_DISABLED:
+    if not auth_disabled:
         state.postgres = await asyncpg.create_pool(
             os.getenv("DATABASE_URL", "postgresql://agentwatch:agentwatch@localhost:5432/agentwatch")
         )
@@ -65,7 +67,8 @@ app = FastAPI(title="NetrAI Ingestion API", lifespan=lifespan)
 
 @app.get("/healthz")
 async def healthcheck() -> dict[str, str]:
-    return {"status": "ok", "backend": SPAN_BACKEND}
+    backend = os.getenv("SPAN_BACKEND", SPAN_BACKEND)
+    return {"status": "ok", "backend": backend}
 
 
 # Register all modular domain routers

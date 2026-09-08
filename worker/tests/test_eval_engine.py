@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 
@@ -6,6 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from eval_engine import (
     FACTUALITY_JUDGE_PROMPT_VERSION,
     FAITHFULNESS_JUDGE_PROMPT_VERSION,
+    TASK_ADHERENCE_JUDGE_PROMPT_VERSION,
     EvalEngine,
     calculate_eval_cost,
     extract_retrieved_context,
@@ -244,3 +246,100 @@ def test_calculate_eval_cost_models():
     cost_haiku = calculate_eval_cost("claude-3-5-haiku", prompt_tokens=2000, completion_tokens=500)
     expected_haiku = (2000 / 1e6) * 0.80 + (500 / 1e6) * 4.00
     assert cost_haiku == round(expected_haiku, 7)
+
+
+def test_task_adherence_aligned_intent_action():
+    engine = EvalEngine("postgresql://mock")
+
+    user_request = "Can you look up the current order status for order ID ORD-9921?"
+    agent_action = {
+        "tool": "lookup_order",
+        "arguments": {"order_id": "ORD-9921"},
+    }
+
+    llm_span = {
+        "org_id": "org_enterprise_1",
+        "span_id": "llm_span_adh_1",
+        "trace_id": "trace_adh_1",
+        "span_type": "llm_call",
+        "input": user_request,
+        "output": json.dumps(agent_action),
+        "status": "success",
+    }
+
+    score = engine.evaluate_task_adherence(
+        user_input=user_request,
+        agent_action=agent_action,
+        llm_span=llm_span,
+        judge_model="gpt-4o-mini",
+    )
+
+    assert score is not None
+    assert score["score_type"] == "task_adherence"
+    assert score["check_type"] == "task_adherence"
+    assert score["value"] >= 0.70
+    assert score["metadata"]["adherence_level"] == "aligned"
+    assert score["judge_model"] == "gpt-4o-mini"
+    assert score["judge_prompt_version"] == TASK_ADHERENCE_JUDGE_PROMPT_VERSION
+    assert score["cost_usd_eval"] > 0.0
+
+
+def test_task_adherence_intent_mismatch():
+    engine = EvalEngine("postgresql://mock")
+
+    user_request = "Please cancel my subscription immediately and stop recurring billing."
+    agent_action = {
+        "tool": "charge_credit_card",
+        "arguments": {"amount": 299.00, "renew": True},
+    }
+
+    llm_span = {
+        "org_id": "org_enterprise_1",
+        "span_id": "llm_span_adh_2",
+        "trace_id": "trace_adh_2",
+        "span_type": "llm_call",
+        "input": user_request,
+        "output": json.dumps(agent_action),
+        "status": "success",
+    }
+
+    score = engine.evaluate_task_adherence(
+        user_input=user_request,
+        agent_action=agent_action,
+        llm_span=llm_span,
+        judge_model="gpt-4o-mini",
+    )
+
+    assert score is not None
+    assert score["score_type"] == "task_adherence"
+    assert score["value"] < 0.70
+    assert score["metadata"]["adherence_level"] == "mismatch"
+    assert "Possible intent mismatch" in score["reasoning"]
+
+
+def test_task_adherence_span_evaluator():
+    engine = EvalEngine("postgresql://mock")
+
+    span = {
+        "org_id": "org_enterprise_1",
+        "span_id": "llm_span_adh_3",
+        "trace_id": "trace_adh_3",
+        "span_type": "llm_call",
+        "input": "Query database for customer email records",
+        "output": {"tool": "database_query", "sql": "SELECT email FROM customers"},
+        "status": "success",
+    }
+
+    config = {
+        "eval_type": "task_adherence",
+        "name": "Task Adherence Check",
+        "sampling_rate": 1.0,
+        "model": "gpt-4o-mini",
+    }
+
+    score = engine.evaluate_span(span, config)
+    assert score is not None
+    assert score["score_type"] == "task_adherence"
+    assert score["score_value"] >= 0.70
+    assert score["cost_usd_eval"] > 0.0
+
