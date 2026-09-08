@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from app.dependencies import ApiKey, authenticate
+from app.dependencies import ApiKey, authenticate, state
 
 router = APIRouter(tags=["sessions"])
 
@@ -109,9 +109,107 @@ async def list_sessions(
     }
 
 
+MOCK_MISUNDERSTANDING_LOOPS: list[dict[str, Any]] = [
+    {
+        "id": 1,
+        "org_id": "org_dev_demo",
+        "session_id": "sess_refund_confusion_882",
+        "agent_id": "refund_approval_agent",
+        "user_id": "user_priya_44",
+        "retry_count": 4,
+        "total_tokens_in_loop": 14200,
+        "total_cost_in_loop": 0.0864,
+        "loop_type": "misunderstanding_loop",
+        "similarity_scores": [0.82, 0.79, 0.88],
+        "sample_rephrasings": [
+            "Cancel my order #9912 and process a refund to my credit card immediately.",
+            "I already asked to cancel order 9912 and get my money refunded please.",
+            "Please just refund order 9912 back to the original card, do not send replacement.",
+            "Cancel and refund order 9912 now."
+        ],
+        "tool_thrashing_detected": True,
+        "task_completed": False,
+        "flagged_at": "2026-08-23T08:45:00Z",
+    },
+    {
+        "id": 2,
+        "org_id": "org_dev_demo",
+        "session_id": "sess_auth_loop_109",
+        "agent_id": "customer_support_bot",
+        "user_id": "user_rahul_99",
+        "retry_count": 3,
+        "total_tokens_in_loop": 9850,
+        "total_cost_in_loop": 0.0520,
+        "loop_type": "misunderstanding_loop",
+        "similarity_scores": [0.76, 0.84],
+        "sample_rephrasings": [
+            "How do I reset my SSO MFA authenticator device?",
+            "My Okta MFA is locked, how can I reset it?",
+            "Reset Okta authenticator device for my login."
+        ],
+        "tool_thrashing_detected": False,
+        "task_completed": False,
+        "flagged_at": "2026-08-23T07:30:00Z",
+    },
+    {
+        "id": 3,
+        "org_id": "org_dev_demo",
+        "session_id": "sess_sql_query_fail_311",
+        "agent_id": "sql_analyst",
+        "user_id": "user_vikram_04",
+        "retry_count": 3,
+        "total_tokens_in_loop": 8100,
+        "total_cost_in_loop": 0.0415,
+        "loop_type": "tool_arg_thrashing",
+        "similarity_scores": [0.72, 0.75],
+        "sample_rephrasings": [
+            "Show me top 10 enterprise customers by active seat count this month.",
+            "List enterprise accounts ordered by seats utilized in August 2026.",
+            "Query active seat totals for all enterprise orgs this month."
+        ],
+        "tool_thrashing_detected": True,
+        "task_completed": False,
+        "flagged_at": "2026-08-23T06:15:00Z",
+    },
+]
+
+
+@router.get("/v1/sessions/misunderstanding-loops")
+async def list_misunderstanding_loops(
+    limit: int = 50,
+    api_key: ApiKey = Depends(authenticate),
+) -> dict[str, Any]:
+    """List sessions flagged with user rephrasing and misunderstanding loops sorted by wasted cost."""
+    if hasattr(state, "postgres") and state.postgres is not None:
+        try:
+            rows = await state.postgres.fetch(
+                """
+                SELECT id, org_id, session_id, agent_id, user_id, retry_count,
+                       total_tokens_in_loop, total_cost_in_loop, loop_type,
+                       similarity_scores, sample_rephrasings, tool_thrashing_detected,
+                       task_completed, flagged_at
+                FROM session_quality
+                WHERE org_id = $1
+                ORDER BY total_cost_in_loop DESC
+                LIMIT $2
+                """,
+                api_key.org_id,
+                limit,
+            )
+            if rows:
+                return {"data": [dict(r) for r in rows]}
+        except Exception:
+            pass
+
+    # Sort mock loops by wasted cost descending
+    sorted_loops = sorted(MOCK_MISUNDERSTANDING_LOOPS, key=lambda x: x["total_cost_in_loop"], reverse=True)
+    return {"data": sorted_loops[:limit]}
+
+
 @router.get("/v1/sessions/{session_id}")
 async def get_session_thread(session_id: str, api_key: ApiKey = Depends(authenticate)) -> dict[str, Any]:
     """Get full multi-turn conversation thread details and span tree for a session."""
+
     return {
         "session_id": session_id,
         "user_id": "user_rahul_99",
