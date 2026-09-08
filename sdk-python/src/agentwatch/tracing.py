@@ -1,8 +1,8 @@
-"""Decorators and context managers for AgentWatch spans."""
-
 import contextvars
 import functools
 import inspect
+import json
+import re
 import secrets
 import time
 from contextlib import ContextDecorator
@@ -11,7 +11,7 @@ from typing import Any, Callable, ParamSpec, TypeVar
 from uuid import uuid4
 
 from .config import get_config
-from .exceptions import InjectionDetected, OutputPolicyViolation, PolicyViolation
+from .exceptions import InjectionDetected, OutputPolicyViolation, PolicyViolation, TierRestrictedError
 from .exporter import exporter
 from .injection_detector import detect_prompt_injection
 from .output_policy import scan_output_policy
@@ -49,6 +49,90 @@ def _extract_llm(response: Any) -> tuple[str | None, int | None, int | None]:
     return model, prompt, completion
 
 
+def _extract_text_content(output: Any) -> str | None:
+    if isinstance(output, str):
+        return output
+    choices = getattr(output, "choices", None)
+    if choices and len(choices) > 0:
+        msg = getattr(choices[0], "message", None)
+        if msg and hasattr(msg, "content"):
+            return str(msg.content or "")
+        text = getattr(choices[0], "text", None)
+        if text is not None:
+            return str(text)
+    content = getattr(output, "content", None)
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list) and len(content) > 0:
+        first = content[0]
+        if hasattr(first, "text"):
+            return str(first.text)
+        if isinstance(first, dict) and "text" in first:
+            return str(first["text"])
+    return None
+
+
+def compute_output_consistency(outputs: list[Any]) -> float:
+    """Compute agreement score in [0.0, 1.0] across multiple LLM execution outputs.
+
+    - For structured data (dicts, lists, primitives), computes pairwise exact match agreement.
+    - For text data, computes token Jaccard similarity and character/n-gram overlap.
+    """
+    if not outputs or len(outputs) <= 1:
+        return 1.0
+
+    text_outputs = [_extract_text_content(o) for o in outputs]
+    all_text = all(t is not None for t in text_outputs)
+
+    if all_text:
+        texts = [t.strip().lower() for t in text_outputs if t is not None]
+        if all(t == texts[0] for t in texts):
+            return 1.0
+
+        pairwise_scores: list[float] = []
+        n = len(texts)
+        for i in range(n):
+            for j in range(i + 1, n):
+                s1, s2 = texts[i], texts[j]
+                if s1 == s2:
+                    pairwise_scores.append(1.0)
+                    continue
+                tokens1 = set(re.findall(r"\w+", s1))
+                tokens2 = set(re.findall(r"\w+", s2))
+                if not tokens1 and not tokens2:
+                    jaccard = 1.0
+                elif not tokens1 or not tokens2:
+                    jaccard = 0.0
+                else:
+                    jaccard = len(tokens1 & tokens2) / len(tokens1 | tokens2)
+
+                words1 = re.findall(r"\w+", s1)
+                words2 = re.findall(r"\w+", s2)
+                if len(words1) >= 2 and len(words2) >= 2:
+                    bigrams1 = set(zip(words1[:-1], words1[1:]))
+                    bigrams2 = set(zip(words2[:-1], words2[1:]))
+                    bigram_sim = len(bigrams1 & bigrams2) / len(bigrams1 | bigrams2) if (bigrams1 | bigrams2) else 1.0
+                    sim = 0.5 * jaccard + 0.5 * bigram_sim
+                else:
+                    sim = jaccard
+                pairwise_scores.append(sim)
+        return sum(pairwise_scores) / len(pairwise_scores) if pairwise_scores else 1.0
+
+    normalized = [json.dumps(_safe(o), sort_keys=True) for o in outputs]
+    if all(n == normalized[0] for n in normalized):
+        return 1.0
+
+    n = len(normalized)
+    matches = 0
+    total_pairs = 0
+    for i in range(n):
+        for j in range(i + 1, n):
+            total_pairs += 1
+            if normalized[i] == normalized[j]:
+                matches += 1
+    return matches / total_pairs if total_pairs > 0 else 1.0
+
+
 class _SpanScope(ContextDecorator):
     def __init__(
         self,
@@ -65,6 +149,7 @@ class _SpanScope(ContextDecorator):
         injection_risk_score: float | None = None,
         injection_flags: list[str] | None = None,
         input_data: Any = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         self.name, self.span_type, self.agent_id, self.parent_agent_id = name, span_type, agent_id, parent_agent_id
         self.org_id, self.session_id, self.user_id, self.end_user_id = org_id, session_id, user_id, end_user_id
@@ -72,6 +157,7 @@ class _SpanScope(ContextDecorator):
         self.injection_risk_score = injection_risk_score
         self.injection_flags = injection_flags or []
         self.input_data = input_data
+        self.metadata = dict(metadata) if metadata else {}
         self.trace_id: str | None = None
         self.span_id: str | None = None
         self._trace_token: contextvars.Token[str | None] | None = None
@@ -113,12 +199,15 @@ class _SpanScope(ContextDecorator):
         self._start_time = time.perf_counter()
         return self
 
-    def finish(self, *, output: Any = None, error: BaseException | None = None, model: str | None = None, prompt_tokens: int | None = None, completion_tokens: int | None = None) -> None:
+    def finish(self, *, output: Any = None, error: BaseException | None = None, model: str | None = None, prompt_tokens: int | None = None, completion_tokens: int | None = None, metadata: dict[str, Any] | None = None) -> None:
         if self._finished:
             return
         assert self._started is not None and self.trace_id and self.span_id
         ended = datetime.now(UTC)
         err_msg = f"{type(error).__name__}: {error}" if error else None
+        span_meta = dict(self.metadata)
+        if metadata:
+            span_meta.update(metadata)
         exporter.enqueue({
             "trace_id": self.trace_id,
             "span_id": self.span_id,
@@ -145,7 +234,7 @@ class _SpanScope(ContextDecorator):
             "error_message": err_msg[:8_192] if err_msg else None,
             "started_at": self._started.isoformat(),
             "ended_at": ended.isoformat(),
-            "metadata": {},
+            "metadata": span_meta,
         })
         self._finished = True
 
@@ -194,9 +283,54 @@ class _SpanScope(ContextDecorator):
 
 
 class TraceLLM(_SpanScope):
-    def __init__(self, name: str | None = None, policy_mode: str = "block", **kwargs: Any) -> None:
-        super().__init__(name or "llm.call", "llm_call", **kwargs)
+    """Decorator and context manager for tracing LLM invocations and guardrail policies.
+
+    Consistency-Check Mode:
+    When `consistency_check=True`, the wrapped LLM call is re-executed N times (default N=3)
+    at a higher temperature (`consistency_temperature`, default 0.7). AgentWatch computes
+    an agreement / consistency score (0.0 to 1.0) across all outputs using token/semantic similarity
+    or exact-matching for structured outputs, storing both the `consistency_score` and `alternate_outputs`
+    in the span metadata.
+
+    WARNING:
+    Enabling consistency-check multiplies LLM token usage and execution cost by N.
+    It is intended strictly for high-stakes decision paths (such as refund approvals,
+    medical/diagnosis-adjacent suggestions, compliance validations, or high-value transactions),
+    and should NOT be blanket-enabled across all LLM spans.
+
+    Tier Requirement:
+    Restricted to Team and Enterprise plan tiers. Attempting to use consistency_check on
+    free or pro tiers raises TierRestrictedError.
+    """
+
+    def __init__(
+        self,
+        name: str | None = None,
+        model: str | None = None,
+        *,
+        consistency_check: bool = False,
+        consistency_samples: int = 3,
+        consistency_temperature: float = 0.7,
+        policy_mode: str = "block",
+        metadata: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        span_name = name or (f"llm.{model}" if model else "llm.call")
+        super().__init__(span_name, "llm_call", metadata=metadata, **kwargs)
+        self.model = model
         self.policy_mode = policy_mode
+        self.consistency_check = consistency_check
+        self.consistency_samples = max(2, consistency_samples) if consistency_samples else 3
+        self.consistency_temperature = consistency_temperature
+
+    def _validate_tier(self) -> None:
+        if not self.consistency_check:
+            return
+        tier = (get_config().plan_tier or "team").lower()
+        if tier not in ("team", "enterprise"):
+            raise TierRestrictedError(
+                f"Consistency-check mode is restricted to Team and Enterprise plan tiers (current tier: '{tier}')."
+            )
 
     def check_input_guard(self) -> None:
         """Perform pre-execution prompt injection analysis before calling LLM."""
@@ -220,13 +354,43 @@ class TraceLLM(_SpanScope):
         self.finish(output=response, model=model, prompt_tokens=prompt, completion_tokens=completion)
 
     def __enter__(self) -> "TraceLLM":
+        self._validate_tier()
         super().__enter__()
         self.check_input_guard()
         return self
 
     def __call__(self, func: Callable[P, R]) -> Callable[P, R]:
         def scope_for_call(args: Any, kwargs: Any) -> "TraceLLM":
-            return TraceLLM(self.name, agent_id=self.agent_id, org_id=self.org_id, policy_mode=self.policy_mode, input_data={"args": _safe(args), "kwargs": _safe(kwargs)})
+            return TraceLLM(
+                name=self.name,
+                model=self.model,
+                consistency_check=self.consistency_check,
+                consistency_samples=self.consistency_samples,
+                consistency_temperature=self.consistency_temperature,
+                agent_id=self.agent_id,
+                org_id=self.org_id,
+                policy_mode=self.policy_mode,
+                metadata=self.metadata,
+                input_data={"args": _safe(args), "kwargs": _safe(kwargs)},
+            )
+
+        def _get_rerun_kwargs(call_kwargs: dict[str, Any]) -> dict[str, Any]:
+            rerun = dict(call_kwargs)
+            try:
+                sig = inspect.signature(func)
+                has_temp = False
+                has_var_kwargs = False
+                for p in sig.parameters.values():
+                    if p.name == "temperature":
+                        has_temp = True
+                    elif p.kind == inspect.Parameter.VAR_KEYWORD:
+                        has_var_kwargs = True
+                if has_temp or has_var_kwargs:
+                    rerun["temperature"] = self.consistency_temperature
+            except Exception:
+                rerun["temperature"] = self.consistency_temperature
+            return rerun
+
         if inspect.iscoroutinefunction(func):
             @functools.wraps(func)
             async def async_wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
@@ -237,11 +401,48 @@ class TraceLLM(_SpanScope):
                 except BaseException as exc:
                     scope.__exit__(type(exc), exc, exc.__traceback__)
                     raise
+
+                alternate_outputs: list[Any] = []
+                if self.consistency_check:
+                    rerun_kwargs = _get_rerun_kwargs(kwargs)
+                    for _ in range(self.consistency_samples - 1):
+                        try:
+                            alt_resp = await func(*args, **rerun_kwargs)
+                            alternate_outputs.append(alt_resp)
+                        except Exception:
+                            pass
+
+                all_outputs = [response, *alternate_outputs]
                 model, prompt, completion = _extract_llm(response)
+                model = model or self.model
+
+                if self.consistency_check:
+                    c_score = compute_output_consistency(all_outputs)
+                    total_p, total_c, has_usage = 0, 0, False
+                    for r in all_outputs:
+                        _, p_tok, c_tok = _extract_llm(r)
+                        if p_tok is not None:
+                            total_p += p_tok
+                            has_usage = True
+                        if c_tok is not None:
+                            total_c += c_tok
+                            has_usage = True
+                    prompt = total_p if has_usage else (prompt * len(all_outputs) if prompt else None)
+                    completion = total_c if has_usage else (completion * len(all_outputs) if completion else None)
+                    scope.metadata.update({
+                        "consistency_check": True,
+                        "consistency_score": round(c_score, 4),
+                        "alternate_outputs": [_safe(alt) for alt in alternate_outputs],
+                        "consistency_samples": len(all_outputs),
+                        "consistency_temperature": self.consistency_temperature,
+                    })
+
                 scope.check_output_guard(response, model, prompt, completion)
                 scope.__exit__(None, None, None)
                 return response
+
             return async_wrapped
+
         @functools.wraps(func)
         def wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
             scope = scope_for_call(args, kwargs)
@@ -251,15 +452,77 @@ class TraceLLM(_SpanScope):
             except BaseException as exc:
                 scope.__exit__(type(exc), exc, exc.__traceback__)
                 raise
+
+            alternate_outputs: list[Any] = []
+            if self.consistency_check:
+                rerun_kwargs = _get_rerun_kwargs(kwargs)
+                for _ in range(self.consistency_samples - 1):
+                    try:
+                        alt_resp = func(*args, **rerun_kwargs)
+                        alternate_outputs.append(alt_resp)
+                    except Exception:
+                        pass
+
+            all_outputs = [response, *alternate_outputs]
             model, prompt, completion = _extract_llm(response)
+            model = model or self.model
+
+            if self.consistency_check:
+                c_score = compute_output_consistency(all_outputs)
+                total_p, total_c, has_usage = 0, 0, False
+                for r in all_outputs:
+                    _, p_tok, c_tok = _extract_llm(r)
+                    if p_tok is not None:
+                        total_p += p_tok
+                        has_usage = True
+                    if c_tok is not None:
+                        total_c += c_tok
+                        has_usage = True
+                prompt = total_p if has_usage else (prompt * len(all_outputs) if prompt else None)
+                completion = total_c if has_usage else (completion * len(all_outputs) if completion else None)
+                scope.metadata.update({
+                    "consistency_check": True,
+                    "consistency_score": round(c_score, 4),
+                    "alternate_outputs": [_safe(alt) for alt in alternate_outputs],
+                    "consistency_samples": len(all_outputs),
+                    "consistency_temperature": self.consistency_temperature,
+                })
+
             scope.check_output_guard(response, model, prompt, completion)
             scope.__exit__(None, None, None)
             return response
+
         return wrapped
 
 
-def trace_llm(name: str | None = None, **kwargs: Any) -> TraceLLM:
-    return TraceLLM(name, **kwargs)
+def trace_llm(
+    name: str | None = None,
+    model: str | None = None,
+    *,
+    consistency_check: bool = False,
+    consistency_samples: int = 3,
+    consistency_temperature: float = 0.7,
+    **kwargs: Any,
+) -> TraceLLM:
+    """Trace an LLM execution, enforcing guardrails and optionally verifying response consistency.
+
+    Parameters:
+    - name: Optional span name (defaults to "llm.<model>" or "llm.call").
+    - model: Optional model identifier (e.g. "gpt-4o", "claude-3-5-sonnet").
+    - consistency_check: Opt-in flag to re-run the LLM call N times to assess response consistency.
+    - consistency_samples: Number of total sample runs (default: 3).
+    - consistency_temperature: Higher temperature for consistency sampling runs (default: 0.7).
+    - **kwargs: Additional span arguments (agent_id, session_id, policy_mode, etc.).
+    """
+    return TraceLLM(
+        name=name,
+        model=model,
+        consistency_check=consistency_check,
+        consistency_samples=consistency_samples,
+        consistency_temperature=consistency_temperature,
+        **kwargs,
+    )
+
 
 
 def trace_tool(name: str | None = None, **kwargs: Any) -> Callable[[Callable[P, R]], Callable[P, R]]:

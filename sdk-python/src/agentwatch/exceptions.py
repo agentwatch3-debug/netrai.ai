@@ -24,3 +24,9 @@ class OutputPolicyViolation(AgentWatchError):
 class QuotaExceeded(AgentWatchError):
     """Raised when an end user exceeds their hourly/daily request or cost quota."""
     pass
+
+
+class TierRestrictedError(AgentWatchError):
+    """Raised when a requested feature is restricted to higher plan tiers (e.g. Team or Enterprise)."""
+    pass
+

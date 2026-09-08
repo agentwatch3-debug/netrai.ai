@@ -9,6 +9,7 @@ class AgentWatchConfig:
     api_key: str = field(default_factory=lambda: os.getenv("AGENTWATCH_API_KEY", ""))
     endpoint: str = field(default_factory=lambda: os.getenv("AGENTWATCH_ENDPOINT", "http://127.0.0.1:8000"))
     org_id: str = field(default_factory=lambda: os.getenv("AGENTWATCH_ORG_ID", "default"))
+    plan_tier: str = field(default_factory=lambda: os.getenv("AGENTWATCH_PLAN_TIER", "team"))
     flush_interval_seconds: float = 2.0
     batch_size: int = 50
 
