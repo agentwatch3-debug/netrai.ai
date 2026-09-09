@@ -55,7 +55,7 @@ export function ComparisonMatrix() {
       langsmith: false,
     },
     {
-      name: "GDPR / CCPA Subject Rights Erasure Workflow",
+      name: "DPDP / GDPR Subject Rights Erasure Workflow",
       desc: "Two-step admin confirmation gate & ClickHouse purge",
       agentwatch: true,
       langfuse: false,
@@ -76,64 +76,72 @@ export function ComparisonMatrix() {
     <section id="comparison" className="py-20 relative">
       <div className="mx-auto max-w-6xl px-4 space-y-10">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <Badge className="bg-blue-950/60 text-blue-300 border-blue-800 text-[10px] font-mono uppercase tracking-wider">
+          <Badge variant="neutral" className="border-borderStrong text-ink bg-surface text-[10px] font-mono uppercase tracking-wider">
             Competitive Benchmarking
           </Badge>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-bold text-ink font-display tracking-tight">
             How NetrAI Compares
           </h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-inkDim">
             Engineered specifically for autonomous multi-agent swarms with enterprise safety and zero vendor lock-in.
           </p>
         </div>
 
-        <Card className="border-white/10 bg-slate-900/40 rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden">
+        <Card className="border border-border bg-surface rounded-sm shadow-none overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
-              <thead className="border-b border-white/10 bg-slate-950/60 font-mono text-slate-300">
+              <thead className="border-b border-border bg-paper font-mono text-ink">
                 <tr>
-                  <th className="py-3.5 px-4 font-semibold">Capabilities</th>
-                  <th className="py-3.5 px-4 font-bold text-blue-400 bg-blue-950/30 text-center">
+                  <th className="py-3.5 px-4 font-bold">Capabilities</th>
+                  <th className="py-3.5 px-4 font-bold text-ink bg-accentSoft/60 text-center border-x border-border">
                     NetrAI
                   </th>
-                  <th className="py-3.5 px-4 font-medium text-slate-400 text-center">Langfuse</th>
-                  <th className="py-3.5 px-4 font-medium text-slate-400 text-center">Maxim AI</th>
-                  <th className="py-3.5 px-4 font-medium text-slate-400 text-center">LangSmith</th>
+                  <th className="py-3.5 px-4 font-medium text-inkDim text-center">Langfuse</th>
+                  <th className="py-3.5 px-4 font-medium text-inkDim text-center">Maxim AI</th>
+                  <th className="py-3.5 px-4 font-medium text-inkDim text-center">LangSmith</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 font-mono">
-                {features.map((f, i) => (
-                  <tr key={i} className="hover:bg-slate-900/50 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <strong className="text-white block font-sans text-xs">{f.name}</strong>
-                      <span className="text-[11px] text-slate-400 font-mono">{f.desc}</span>
+              <tbody className="divide-y divide-border font-sans">
+                {features.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-paper transition-colors">
+                    <td className="py-3 px-4">
+                      <strong className="block text-ink font-semibold text-xs">{row.name}</strong>
+                      <span className="text-[11px] text-inkDim">{row.desc}</span>
                     </td>
-                    <td className="py-3.5 px-4 text-center bg-blue-950/20">
-                      <div className="flex items-center justify-center text-emerald-400">
-                        <Check size={16} className="stroke-[3]" />
+
+                    {/* NetrAI Column */}
+                    <td className="py-3 px-4 text-center bg-accentSoft/30 border-x border-border">
+                      <div className="inline-flex h-6 w-6 items-center justify-center rounded-none bg-good/20 text-good">
+                        <Check size={14} className="stroke-[3]" />
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 text-center text-slate-500">
-                      {f.langfuse === true ? (
-                        <Check size={14} className="text-slate-300 mx-auto" />
-                      ) : f.langfuse === "partial" ? (
-                        <span className="text-[10px] text-amber-400 font-bold">PARTIAL</span>
+
+                    {/* Langfuse Column */}
+                    <td className="py-3 px-4 text-center text-inkDim">
+                      {row.langfuse === true ? (
+                        <Check size={14} className="mx-auto text-good" />
+                      ) : row.langfuse === "partial" ? (
+                        <span className="text-[10px] font-mono font-semibold text-warn">PARTIAL</span>
                       ) : (
-                        <X size={14} className="text-slate-600 mx-auto" />
+                        <X size={14} className="mx-auto text-bad" />
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-center text-slate-500">
-                      {f.maxim === true ? (
-                        <Check size={14} className="text-slate-300 mx-auto" />
+
+                    {/* Maxim AI Column */}
+                    <td className="py-3 px-4 text-center text-inkDim">
+                      {row.maxim === true ? (
+                        <Check size={14} className="mx-auto text-good" />
                       ) : (
-                        <X size={14} className="text-slate-600 mx-auto" />
+                        <X size={14} className="mx-auto text-bad" />
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-center text-slate-500">
-                      {f.langsmith === true ? (
-                        <Check size={14} className="text-slate-300 mx-auto" />
+
+                    {/* LangSmith Column */}
+                    <td className="py-3 px-4 text-center text-inkDim">
+                      {row.langsmith === true ? (
+                        <Check size={14} className="mx-auto text-good" />
                       ) : (
-                        <X size={14} className="text-slate-600 mx-auto" />
+                        <X size={14} className="mx-auto text-bad" />
                       )}
                     </td>
                   </tr>

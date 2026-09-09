@@ -10,13 +10,13 @@ export function BentoGrid() {
     <section id="features" className="py-20 relative">
       <div className="mx-auto max-w-6xl px-4 space-y-12">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <Badge className="bg-indigo-950/60 text-indigo-300 border-indigo-800 text-[10px] font-mono uppercase tracking-wider">
+          <Badge variant="neutral" className="border-borderStrong text-ink bg-surface text-[10px] font-mono uppercase tracking-wider">
             Full-Stack Agent Governance
           </Badge>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-bold text-ink font-display tracking-tight">
             Built for Autonomous Multi-Agent Swarms
           </h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-inkDim">
             Everything you need to observe, govern, and secure AI agents in production without burning unnecessary cloud spend.
           </p>
         </div>
@@ -24,113 +24,133 @@ export function BentoGrid() {
         {/* Bento Grid Layout */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1: Multi-Agent Graph (Col span 2) */}
-          <Card className="md:col-span-2 border-white/10 bg-slate-900/40 p-6 rounded-2xl shadow-xl backdrop-blur-xl relative overflow-hidden group hover:border-blue-500/50 transition-colors">
+          <Card className="md:col-span-2 border border-border bg-surface p-6 rounded-sm shadow-none relative overflow-hidden group hover:border-ink transition-colors">
             <div className="space-y-3 max-w-md">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-950 border border-blue-800 text-blue-400">
+                <div className="flex h-8 w-8 items-center justify-center rounded-none bg-paper border border-border text-ink">
                   <Share2 size={16} />
                 </div>
-                <h3 className="text-base font-bold text-white">Interactive Agent Topology Graph</h3>
+                <h3 className="text-base font-bold text-ink font-display">Interactive Agent Topology Graph</h3>
               </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-inkDim leading-relaxed">
                 Automatically maps delegation hierarchies, call volume, edge latencies, and error clusters across orchestrators, planners, and sub-agents.
               </p>
             </div>
 
             {/* Visual Node Graph Preview */}
-            <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950 p-4 font-mono text-xs text-slate-300 flex items-center justify-around">
-              <div className="p-3 rounded-lg border border-blue-500/50 bg-blue-950/40 text-center space-y-1">
-                <Bot size={16} className="text-blue-400 mx-auto" />
-                <span className="text-[11px] text-white font-bold block">Orchestrator</span>
-                <span className="text-[9px] text-blue-300 block">520 calls • 0.1% err</span>
+            <div className="mt-6 rounded-none border border-border bg-paper p-4 font-mono text-xs text-ink flex items-center justify-around">
+              <div className="p-3 rounded-none border border-border bg-surface text-center space-y-1 shadow-none">
+                <Bot size={16} className="text-accent mx-auto" />
+                <span className="text-[11px] text-ink font-bold block">Orchestrator</span>
+                <span className="text-[9px] text-inkDim block">520 calls • 0.1% err</span>
               </div>
-              <div className="h-0.5 w-12 bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse" />
-              <div className="p-3 rounded-lg border border-purple-500/50 bg-purple-950/40 text-center space-y-1">
-                <Cpu size={16} className="text-purple-400 mx-auto" />
-                <span className="text-[11px] text-white font-bold block">SQL Analyst</span>
-                <span className="text-[9px] text-purple-300 block">140 calls • 0.0% err</span>
+              <div className="h-0.5 w-12 bg-borderStrong" />
+              <div className="p-3 rounded-none border border-border bg-surface text-center space-y-1 shadow-none">
+                <Cpu size={16} className="text-ink mx-auto" />
+                <span className="text-[11px] text-ink font-bold block">SQL Analyst</span>
+                <span className="text-[9px] text-inkDim block">140 calls • 0.0% err</span>
               </div>
             </div>
 
             <div className="pt-4 flex justify-end">
-              <Link href="/agents/graph" className="text-xs text-blue-400 hover:underline flex items-center gap-1 font-mono">
+              <Link href="/agents/graph" className="text-xs text-ink font-bold hover:underline flex items-center gap-1 font-mono">
                 View Topology Explorer <ArrowUpRight size={13} />
               </Link>
             </div>
           </Card>
 
           {/* Card 2: Cost Runaway Circuit Breaker (Col span 1) */}
-          <Card className="border-white/10 bg-slate-900/40 p-6 rounded-2xl shadow-xl backdrop-blur-xl relative overflow-hidden group hover:border-amber-500/50 transition-colors space-y-3 flex flex-col justify-between">
+          <Card className="border border-border bg-surface p-6 rounded-sm shadow-none relative overflow-hidden group hover:border-ink transition-colors space-y-3 flex flex-col justify-between">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-950 border border-amber-800 text-amber-400">
+                <div className="flex h-8 w-8 items-center justify-center rounded-none bg-paper border border-border text-warn">
                   <ZapOff size={16} />
                 </div>
-                <h3 className="text-base font-bold text-white">Cost Circuit Breaker</h3>
+                <h3 className="text-base font-bold text-ink font-display">Cost Circuit Breaker</h3>
               </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-inkDim leading-relaxed">
                 Hard killswitch that stops runaway agents stuck in infinite loops ($50 in 5 min) and dispatches emergency PagerDuty webhooks.
               </p>
             </div>
 
-            <div className="rounded-lg bg-amber-950/30 border border-amber-800/40 p-3 text-xs font-mono text-amber-300">
+            <div className="rounded-none bg-paper border border-border p-3 text-xs font-mono text-ink">
               ⚡ Threshold: $50.00 / 5m<br />
               ● Status: ARMED & ACTIVE
             </div>
 
-            <Link href="/settings/circuit-breaker" className="text-xs text-amber-400 hover:underline flex items-center gap-1 font-mono">
+            <Link href="/settings/circuit-breaker" className="text-xs text-ink font-bold hover:underline flex items-center gap-1 font-mono">
               Configure Breaker <ArrowUpRight size={13} />
             </Link>
           </Card>
 
           {/* Card 3: Model Context Protocol (MCP) Server (Col span 1) */}
-          <Card id="mcp" className="border-white/10 bg-slate-900/40 p-6 rounded-2xl shadow-xl backdrop-blur-xl relative overflow-hidden group hover:border-purple-500/50 transition-colors space-y-3 flex flex-col justify-between">
+          <Card id="mcp" className="border border-border bg-surface p-6 rounded-sm shadow-none relative overflow-hidden group hover:border-ink transition-colors space-y-3 flex flex-col justify-between">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-950 border border-purple-800 text-purple-400">
+                <div className="flex h-8 w-8 items-center justify-center rounded-none bg-paper border border-border text-accent">
                   <Bot size={16} />
                 </div>
-                <h3 className="text-base font-bold text-white">Native MCP Server</h3>
+                <h3 className="text-base font-bold text-ink font-display">Native MCP Server</h3>
               </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-inkDim leading-relaxed">
                 Connect Claude Desktop, Cursor, or Windsurf directly via stdio JSON-RPC. AIs can query traces, check prompt security, and run evaluations.
               </p>
             </div>
 
-            <div className="rounded-lg bg-slate-950 border border-purple-800/40 p-2.5 font-mono text-[11px] text-purple-300">
-              $ agentwatch mcp --serve
+            <div className="rounded-none bg-paper border border-border p-2.5 font-mono text-[11px] text-ink">
+              <code>$ agentwatch mcp --port 8000</code>
             </div>
 
-            <Link href="/docs/mcp-setup" className="text-xs text-purple-400 hover:underline flex items-center gap-1 font-mono">
+            <Link href="/docs/mcp-setup" className="text-xs text-ink font-bold hover:underline flex items-center gap-1 font-mono">
               MCP Documentation <ArrowUpRight size={13} />
             </Link>
           </Card>
 
-          {/* Card 4: Tamper-Evident SHA-256 Audit Chains (Col span 2) */}
-          <Card className="md:col-span-2 border-white/10 bg-slate-900/40 p-6 rounded-2xl shadow-xl backdrop-blur-xl relative overflow-hidden group hover:border-emerald-500/50 transition-colors">
-            <div className="space-y-3 max-w-md">
+          {/* Card 4: SHA-256 Audit Chain (Col span 1) */}
+          <Card className="border border-border bg-surface p-6 rounded-sm shadow-none relative overflow-hidden group hover:border-ink transition-colors space-y-3 flex flex-col justify-between">
+            <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-950 border border-emerald-800 text-emerald-400">
-                  <Fingerprint size={16} />
+                <div className="flex h-8 w-8 items-center justify-center rounded-none bg-paper border border-border text-good">
+                  <ShieldCheck size={16} />
                 </div>
-                <h3 className="text-base font-bold text-white">Tamper-Evident Cryptographic Audit Chains</h3>
+                <h3 className="text-base font-bold text-ink font-display">SHA-256 Audit Chains</h3>
               </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Sequential SHA-256 hash chains with database-level append-only enforcement (REVOKE UPDATE/DELETE) designed to support SOC 2 and HIPAA compliance workflows.
+              <p className="text-xs text-inkDim leading-relaxed">
+                Cryptographically verify span immutability and compliance actions with tamper-evident SHA-256 hash chains.
               </p>
             </div>
 
-            <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 p-3 font-mono text-[11px] text-slate-300 flex flex-wrap items-center justify-between gap-2">
-              <span className="text-slate-400">Prev Hash: <span className="text-slate-600">00000000...</span></span>
-              <span className="text-emerald-400 font-bold">SHA256(Block #1) ➔ Entry Hash: c9102938...</span>
-              <Badge className="bg-emerald-950 text-emerald-300 border-emerald-800 text-[9px]">Tamper-Evident</Badge>
+            <div className="rounded-none bg-paper border border-border p-2.5 font-mono text-[10px] text-inkDim break-all">
+              Prev: e3b0c442...<br />
+              Hash: a4f89d02...
             </div>
 
-            <div className="pt-4 flex justify-end">
-              <Link href="/settings/audit-log" className="text-xs text-emerald-400 hover:underline flex items-center gap-1 font-mono">
-                Inspect Audit Ledger <ArrowUpRight size={13} />
-              </Link>
+            <Link href="/settings/audit-log" className="text-xs text-ink font-bold hover:underline flex items-center gap-1 font-mono">
+              Audit Log Explorer <ArrowUpRight size={13} />
+            </Link>
+          </Card>
+
+          {/* Card 5: Prompt Injection Shield (Col span 1) */}
+          <Card className="border border-border bg-surface p-6 rounded-sm shadow-none relative overflow-hidden group hover:border-ink transition-colors space-y-3 flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-none bg-paper border border-border text-bad">
+                  <ShieldAlert size={16} />
+                </div>
+                <h3 className="text-base font-bold text-ink font-display">Prompt Injection Shield</h3>
+              </div>
+              <p className="text-xs text-inkDim leading-relaxed">
+                Autonomous heuristic & semantic detectors trap jailbreaks, delimiter injections, and role overrides before reaching the model.
+              </p>
             </div>
+
+            <div className="rounded-none bg-bad/10 border border-bad/30 p-2.5 font-mono text-[11px] text-bad">
+              🛡 99.4% Injections Trapped
+            </div>
+
+            <Link href="/security/injection-attempts" className="text-xs text-ink font-bold hover:underline flex items-center gap-1 font-mono">
+              Security Center <ArrowUpRight size={13} />
+            </Link>
           </Card>
         </div>
       </div>

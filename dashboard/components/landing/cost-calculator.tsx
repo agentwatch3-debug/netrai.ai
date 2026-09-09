@@ -21,24 +21,24 @@ export function CostCalculator() {
     <section className="py-20 relative">
       <div className="mx-auto max-w-6xl px-4 space-y-10">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <Badge className="bg-amber-950/60 text-amber-300 border-amber-800 text-[10px] font-mono uppercase tracking-wider">
+          <Badge variant="neutral" className="border-borderStrong text-ink bg-surface text-[10px] font-mono uppercase tracking-wider">
             Live Cost & Risk Simulator
           </Badge>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-bold text-ink font-display tracking-tight">
             Estimate Swarm Spend & Runaway Protection
           </h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-inkDim">
             Calculate your monthly LLM token volume and simulate how NetrAI prevents catastrophic runaway loop bills.
           </p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8 items-center">
           {/* Sliders Form */}
-          <Card className="border-white/10 bg-slate-900/40 p-6 rounded-2xl shadow-xl backdrop-blur-xl space-y-5">
+          <Card className="border border-border bg-surface p-6 rounded-sm shadow-none space-y-5">
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-mono">
-                <span className="text-slate-300">Active Agent Swarm Size</span>
-                <span className="text-blue-400 font-bold">{agentsCount} Agents</span>
+                <span className="text-inkDim font-semibold">Active Agent Swarm Size</span>
+                <span className="text-ink font-bold">{agentsCount} Agents</span>
               </div>
               <input
                 type="range"
@@ -46,14 +46,14 @@ export function CostCalculator() {
                 max={20}
                 value={agentsCount}
                 onChange={(e) => setAgentsCount(Number(e.target.value))}
-                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                className="w-full h-2 bg-paper rounded-none appearance-none cursor-pointer accent-ink border border-border"
               />
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-mono">
-                <span className="text-slate-300">Request Velocity</span>
-                <span className="text-purple-400 font-bold">{reqPerMin} reqs / min</span>
+                <span className="text-inkDim font-semibold">Request Velocity</span>
+                <span className="text-ink font-bold">{reqPerMin} reqs / min</span>
               </div>
               <input
                 type="range"
@@ -62,14 +62,14 @@ export function CostCalculator() {
                 step={10}
                 value={reqPerMin}
                 onChange={(e) => setReqPerMin(Number(e.target.value))}
-                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                className="w-full h-2 bg-paper rounded-none appearance-none cursor-pointer accent-ink border border-border"
               />
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-mono">
-                <span className="text-slate-300">Avg Tokens per Span</span>
-                <span className="text-emerald-400 font-bold">{tokensPerCall} tokens</span>
+                <span className="text-inkDim font-semibold">Avg Tokens per Span</span>
+                <span className="text-ink font-bold">{tokensPerCall} tokens</span>
               </div>
               <input
                 type="range"
@@ -78,44 +78,49 @@ export function CostCalculator() {
                 step={200}
                 value={tokensPerCall}
                 onChange={(e) => setTokensPerCall(Number(e.target.value))}
-                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                className="w-full h-2 bg-paper rounded-none appearance-none cursor-pointer accent-ink border border-border"
               />
             </div>
           </Card>
 
           {/* Results Summary Card */}
-          <Card className="border-blue-900/50 bg-gradient-to-br from-blue-950/30 to-indigo-950/20 p-6 rounded-2xl shadow-2xl backdrop-blur-xl space-y-6">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <span className="text-xs font-mono text-slate-400 uppercase">Estimated Monthly LLM Spend</span>
-              <span className="text-3xl font-extrabold font-mono text-white">
+          <Card className="border border-borderStrong bg-paper p-6 rounded-sm shadow-none space-y-6">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <span className="text-xs font-mono text-inkDim uppercase font-semibold">Estimated Monthly LLM Spend</span>
+              <span className="text-3xl font-extrabold font-mono text-ink">
                 ${monthlySpendUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-              <div className="p-3 rounded-lg bg-slate-950/60 border border-white/5 space-y-1">
-                <span className="text-slate-500 text-[10px] uppercase">Total Spans Tracked</span>
-                <p className="text-base font-bold text-slate-200">
+              <div className="p-3 rounded-none bg-surface border border-border space-y-1">
+                <span className="text-inkDim text-[10px] uppercase font-semibold">Total Spans Tracked</span>
+                <p className="text-base font-bold text-ink">
                   {(callsPerMonth / 1000000).toFixed(1)}M spans/mo
                 </p>
               </div>
 
-              <div className="p-3 rounded-lg bg-slate-950/60 border border-white/5 space-y-1">
-                <span className="text-slate-500 text-[10px] uppercase">Breaker Protection</span>
-                <p className="text-base font-bold text-emerald-400">
-                  -$50 cap / loop
+              <div className="p-3 rounded-none bg-surface border border-border space-y-1">
+                <span className="text-inkDim text-[10px] uppercase font-semibold">Monthly Tokens</span>
+                <p className="text-base font-bold text-ink">
+                  {(tokensPerMonth / 1000000000).toFixed(2)}B tokens
                 </p>
               </div>
             </div>
 
-            <div className="rounded-xl border border-amber-900/60 bg-amber-950/20 p-4 text-xs font-mono text-amber-200 flex items-start gap-3">
-              <AlertTriangle className="text-amber-400 shrink-0 mt-0.5" size={16} />
-              <div>
-                <strong className="block text-white font-bold">Infinite Loop Protection Active</strong>
-                <span>
-                  Without circuit breakers, an agent loop could burn up to ~${loopRunawayRiskUsd.toFixed(0)} before manual detection. NetrAI kills it at $50.00.
+            {/* Runaway Danger Shield Alert */}
+            <div className="p-4 rounded-none bg-surface border border-warn/40 text-xs font-mono space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-warn flex items-center gap-1.5 uppercase">
+                  <ZapOff size={14} /> Runaway Loss Protected
+                </span>
+                <span className="font-extrabold text-good">
+                  -${loopRunawayRiskUsd.toFixed(2)} Risk Trapped
                 </span>
               </div>
+              <p className="text-[11px] text-inkDim">
+                Circuit breaker triggers within 50ms if loop frequency surpasses 30 tool calls or spend exceeds $50.00.
+              </p>
             </div>
           </Card>
         </div>
